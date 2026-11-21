@@ -17,6 +17,7 @@ from typing import Any
 
 import httpx
 
+from app.agent import thinking
 from app.agent.catalog import catalog
 
 OnDelta = Callable[[str], Awaitable[None]]
@@ -97,6 +98,26 @@ async def chat_litellm(
     body: dict[str, Any] = {"model": model, "messages": _litellm_messages(messages), "stream": True}
     if tools:
         body["tools"] = tools
+    if litellm_reasons(model):
+        body["reasoning_effort"] = thinking.reasoning_effort()
+    try:
+        return await _post_litellm(base, key, body, on_delta)
+    except _Rejected:
+        thinking.LITELLM_REJECTED.add(model)
+        body.pop("reasoning_effort")
+        return await _post_litellm(base, key, body, on_delta)
+
+
+def litellm_reasons(model: str) -> bool:
+    """True when the catalog says `model` supports reasoning and the proxy has not rejected reasoning_effort."""
+    return model not in thinking.LITELLM_REJECTED and catalog.has_cap(model, "reasoning")
+
+
+class _Rejected(Exception):
+    """The proxy answered 400 to a request carrying reasoning_effort."""
+
+
+async def _post_litellm(base: str, key: str, body: dict[str, Any], on_delta: OnDelta | None) -> ChatResult:
     text: list[str] = []
     calls: dict[int, dict[str, str]] = {}
     url = base.rstrip("/") + "/chat/completions"
@@ -107,11 +128,17 @@ async def chat_litellm(
     ):
         if resp.status_code >= 400:
             detail = (await resp.aread()).decode(errors="replace")[:300]
+            if resp.status_code == 400 and "reasoning_effort" in body:
+                raise _Rejected(detail)
             raise LlmError(f"litellm {resp.status_code}: {detail}")
         async for line in resp.aiter_lines():
             if not line.startswith("data:") or line.strip() == "data: [DONE]":
                 continue
-            for choice in json.loads(line[5:]).get("choices", []):
+            try:
+                chunk = json.loads(line[5:])
+            except ValueError:  # one malformed SSE line must not kill the whole turn
+                continue
+            for choice in chunk.get("choices", []):
                 delta = choice.get("delta") or {}
                 if delta.get("content"):
                     text.append(delta["content"])

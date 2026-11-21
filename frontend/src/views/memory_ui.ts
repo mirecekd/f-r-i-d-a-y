@@ -1,6 +1,7 @@
 // frontend/src/views/memory_ui.ts
 import "./memory.css";
 import { el } from "./dom";
+import { glyphIcon } from "./memory_glyphs";
 import { KINDS_ORDER, KIND_COLOR, type Kind, type MemNode } from "./memory_orbs";
 
 export interface UiHooks {
@@ -84,10 +85,8 @@ export function buildMemoryUi(hooks: UiHooks): MemoryUi {
   const keyItems = Object.fromEntries(
     KINDS_ORDER.map((kind) => {
       const item = el("span", "mg-key-i");
-      const dot = el("i", "mg-dot");
-      dot.style.setProperty("--k", KIND_COLOR[kind]);
       const text = el("span");
-      item.append(dot, text);
+      item.append(glyphIcon(kind, KIND_COLOR[kind]), text);
       key.append(item);
       return [kind, { item, text }];
     }),

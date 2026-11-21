@@ -18,6 +18,8 @@ export interface ImageEntry {
   h?: number;
   exif?: Exif;
   error?: string;
+  /** Set for non-image files: the bubble shows a chip instead of a thumbnail. */
+  file?: { kind: string; size: number };
 }
 
 const STORAGE_KEY = "friday.chat";
@@ -44,6 +46,22 @@ export class ChatStore {
     if (this.entries.length > MAX_ENTRIES) this.entries.splice(0, this.entries.length - MAX_ENTRIES);
     this.save();
     return entry;
+  }
+
+  /** Messages only (tool chips and image bubbles do not count as conversation). */
+  messages(): number {
+    return this.entries.filter((e) => e.k === "msg").length;
+  }
+
+  /** Forget the whole history, in memory and in localStorage. */
+  clear(): void {
+    clearTimeout(this.timer);
+    this.entries = [];
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* storage blocked: nothing to remove */
+    }
   }
 
   save(): void {
@@ -111,6 +129,11 @@ export class ChatPanel {
     this.caption.classList.add("show");
     clearTimeout(this.captionTimer);
     this.captionTimer = window.setTimeout(() => this.hideCaption(), CAPTION_MS);
+  }
+
+  /** Hides the closed-state caption now. */
+  clearCaption(): void {
+    this.hideCaption();
   }
 
   private hideCaption(): void {

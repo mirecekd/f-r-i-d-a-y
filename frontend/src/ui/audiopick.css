@@ -1,0 +1,5 @@
+/* frontend/src/ui/audiopick.css */
+.ap-group { display: flex; flex-direction: column; gap: 6px; }
+.ap-opt { width: 100%; text-align: left; opacity: .75; }
+.ap-opt.on { opacity: 1; border-color: var(--c); box-shadow: 0 0 10px rgba(79,216,255,.3); }
+.ap-opt:focus-visible { outline: 2px solid var(--c); outline-offset: 2px; }

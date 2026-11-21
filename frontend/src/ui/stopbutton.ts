@@ -12,7 +12,7 @@ const RUNNING_STATES = new Set(["thinking", "drawing", "speaking"]);
 /** Esc must keep closing these first. */
 const OPEN_LAYERS = ".cf-back, #chat.open, #settingsbtn[aria-expanded=true], .mp-pop:not([hidden]), .mg-full, body.zoommode";
 
-/** Round STOP button: stops playback, mic, capture, zoom mode and dialogs here and sends `{t:'stop'}`; amber ring while busy. */
+/** Round STOP button: stops playback, mic, capture, zoom mode and dialogs here and sends `{t:'stop'}`; highlighted like other active dock buttons (`.on`) while busy. */
 export class StopButton {
   private serverBusy = false;
   private state = "idle";
@@ -26,7 +26,6 @@ export class StopButton {
     net.on((m) => {
       if (m.t === "busy") this.serverBusy = m.busy === true;
       else if (m.t === "state") this.state = String(m.state);
-      else if (m.t === "stopped") this.flash();
       this.render();
     });
   }
@@ -40,18 +39,12 @@ export class StopButton {
     this.net.send({ t: "stop" });
     this.net.emit({ t: "state", state: "idle" });
     this.serverBusy = false;
-    this.flash();
     this.render();
-  }
-
-  private flash(): void {
-    this.button.classList.remove("flash");
-    void this.button.offsetWidth; // restart the animation
-    this.button.classList.add("flash");
   }
 
   private render(): void {
     const busy = this.serverBusy || this.parts.voice.active || RUNNING_STATES.has(this.state);
-    this.button.classList.toggle("busy", busy);
+    this.button.classList.toggle("on", busy);
+    this.button.setAttribute("aria-busy", String(busy));
   }
 }

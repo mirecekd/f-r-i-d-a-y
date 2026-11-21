@@ -14,8 +14,9 @@ from app.agent.catalog import catalog
 from app.agent.draw import make_draw_tool
 from app.agent.loop import Emit, run_agent
 from app.agent.prompt import chat_prompt
-from app.agent.voice_settings import NEXT_SESSION_NOTICE, apply_language, apply_voice, models_fields
+from app.agent.voice_settings import NEXT_SESSION_NOTICE, apply_language, apply_thinking, apply_voice, models_fields
 from app.approval import Approvals
+from app.files import register_file_tools
 from app.mcp import register_mcp_tools
 from app.memory.tools import register_memory_tools
 from app.model3d.tools import register_model_tools
@@ -52,8 +53,9 @@ class AgentSession:
         register_search_tool(self.registry)
         register_mcp_tools(self.registry)  # shared hub, allowlisted + approval-gated tools
         register_memory_tools(self.registry, ctx)
-        register_model_tools(self.registry, ctx)
+        self.models = register_model_tools(self.registry, ctx)
         self.vision = register_vision_tools(self.registry, ctx, lambda: pinned_model("agent"))
+        self.files = register_file_tools(self.registry, ctx, self.vision, lambda: pinned_model("agent"))
         self.registry.register(
             make_draw_tool(lambda: pinned_model("agent"), self.worker_tools, emit)
         )
@@ -97,6 +99,12 @@ class AgentSession:
 
     async def set_voice(self, msg: dict, voice_active: bool = False) -> None:
         error = apply_voice(pinned_model("chat"), msg)
+        if error:
+            return await self.emit({"t": "error", "message": error})
+        await self._changed(voice_active)
+
+    async def set_thinking(self, msg: dict, voice_active: bool = False) -> None:
+        error = apply_thinking(msg)
         if error:
             return await self.emit({"t": "error", "message": error})
         await self._changed(voice_active)

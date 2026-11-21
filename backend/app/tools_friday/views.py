@@ -19,6 +19,7 @@ VIEW_DATA_SHAPES = {
     "json": "{value}",
     "memory_graph": "{nodes: [{id, label, kind, weight, ts, project}], links: [{source, target, kind, weight}]}",
     "image_card": "{url, summary, kind, people_count, objects, text_found, exif, notes}",
+    "file_card": "{id, name, kind, size, title, summary, meta, outline, tables?, text_excerpt, truncated, download_url} (use file_to_scene instead)",
 }
 
 

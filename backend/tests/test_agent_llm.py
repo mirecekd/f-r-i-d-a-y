@@ -100,3 +100,16 @@ def test_gemini_conversion_pairs_tool_results_with_names():
     tool = {"type": "function", "function": {"name": "echo", "description": "d", "parameters": {"type": "object"}}}
     decls = to_declarations([tool]) or []
     assert (decls[0].function_declarations or [])[0].name == "echo"
+
+
+def test_chat_litellm_skips_a_malformed_sse_line(monkeypatch):
+    monkeypatch.setenv("LITELLM_BASE_URL", "http://litellm.test/v1")
+    monkeypatch.setenv("LITELLM_API_KEY", "k-test")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        good = b'data: {"choices": [{"delta": {"content": "ok"}}]}\n\n'
+        return httpx.Response(200, content=b"data: {not json\n\n" + good + b"data: [DONE]\n\n")
+
+    patch_client(monkeypatch, handler)
+    result = asyncio.run(llm.chat_litellm("m1", [{"role": "user", "content": "x"}], [], None))
+    assert result["text"] == "ok"

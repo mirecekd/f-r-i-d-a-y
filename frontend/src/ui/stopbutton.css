@@ -1,14 +1,4 @@
 /* frontend/src/ui/stopbutton.css */
-#stopbtn { width: 64px; height: 64px; border-radius: 50%; color: #ff7088; border-color: rgba(255, 64, 96, .7);
-  background: rgba(40, 6, 14, .6); box-shadow: 0 0 16px rgba(255, 64, 96, .25); }
-#stopbtn:hover { background: rgba(255, 64, 96, .25); }
-#stopbtn.busy { animation: stop-ring 1.3s ease-in-out infinite; }
-#stopbtn.flash { animation: stop-flash .45s ease-out 1; }
-@keyframes stop-ring {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 184, 64, .65), 0 0 16px rgba(255, 64, 96, .3); }
-  50% { box-shadow: 0 0 0 9px rgba(255, 184, 64, 0), 0 0 22px rgba(255, 184, 64, .55); }
-}
-@keyframes stop-flash {
-  0% { background: rgba(255, 64, 96, .85); box-shadow: 0 0 34px rgba(255, 64, 96, .95); }
-  100% { background: rgba(40, 6, 14, .6); }
-}
+#stopbtn { width: 64px; height: 64px; padding: 0; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(4, 18, 30, .6); box-shadow: 0 0 18px rgba(79,216,255,.25); }
+#stopbtn.on { background: rgba(79,216,255,.22); box-shadow: 0 0 22px rgba(79,216,255,.5); }

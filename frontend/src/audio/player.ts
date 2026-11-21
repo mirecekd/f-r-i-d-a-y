@@ -4,18 +4,32 @@ const OUT_RATE = 24000; // model output, PCM16 mono
 /** Gapless playback of PCM16 chunks on a monotonic playhead, with an analyser for the orb. */
 export class Player {
   private ctx?: AudioContext;
+  private el?: HTMLAudioElement;
   private analyser?: AnalyserNode;
   private playhead = 0;
   private sources = new Set<AudioBufferSourceNode>();
   private samples = new Uint8Array(512);
 
-  /** Creates the context; must be called from a user gesture. */
-  init(): void {
-    if (this.ctx) return;
-    this.ctx = new AudioContext({ sampleRate: OUT_RATE });
-    this.analyser = this.ctx.createAnalyser();
+  /**
+   * Creates the context; must be called from a user gesture. The output goes through a MediaStream into a hidden
+   * <audio> element instead of ctx.destination: browsers use media elements as the echo canceller's render
+   * reference, plain Web Audio output leaks back into the microphone on phones. Resolves once playback started.
+   */
+  async init(): Promise<void> {
+    if (this.ctx) return void (await this.el?.play().catch(() => {}));
+    const ctx = (this.ctx = new AudioContext({ sampleRate: OUT_RATE, latencyHint: "interactive" }));
+    this.analyser = ctx.createAnalyser();
     this.analyser.fftSize = 512;
-    this.analyser.connect(this.ctx.destination);
+    const dest = ctx.createMediaStreamDestination();
+    this.analyser.connect(dest);
+    const el = (this.el = document.createElement("audio"));
+    el.hidden = true;
+    el.autoplay = true;
+    el.setAttribute("playsinline", "");
+    el.srcObject = dest.stream;
+    document.body.append(el);
+    const started = el.play().catch((e) => console.warn("audio element play() failed", e));
+    await Promise.race([Promise.all([ctx.resume(), started]), new Promise((r) => setTimeout(r, 1500))]); // never hang the mic start
   }
 
   push(pcm: ArrayBuffer): void {
@@ -42,6 +56,11 @@ export class Player {
     });
     this.sources.clear();
     this.playhead = 0;
+  }
+
+  /** True while chunks are scheduled or sounding. */
+  get playing(): boolean {
+    return this.sources.size > 0;
   }
 
   queued(): number {

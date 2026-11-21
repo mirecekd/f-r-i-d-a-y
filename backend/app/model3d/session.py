@@ -19,6 +19,13 @@ class ModelSession:
         self.book = ProposalBook()
         self.current: str | None = None
 
+    async def reset_transient(self) -> None:
+        """New conversation: drop open proposals (and their ghosts) and the current-model pointer; stored models stay."""
+        ops = self.book.clear()
+        self.current = None
+        if ops:
+            await self.push(ops)
+
     def pick(self, args: dict[str, Any]) -> str:
         mid = args.get("model") or self.current
         if not mid:

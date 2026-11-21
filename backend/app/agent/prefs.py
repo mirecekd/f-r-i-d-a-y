@@ -1,7 +1,8 @@
 # backend/app/agent/prefs.py
 """Pinned preferences, persisted as JSON under FRIDAY_DATA_DIR (default /srv/data).
 
-Keys: agent_model, chat_model (model ids), language (BCP-47 code), voice ({model id: prebuilt voice id}).
+Keys: agent_model, chat_model (model ids), language (BCP-47 code), voice ({model id: prebuilt voice id}),
+thinking (minimal|low|medium|high).
 """
 
 import json
@@ -74,4 +75,16 @@ def save_voice(model: str, voice: str) -> None:
     current = _read()
     voices = current.get("voice")
     current["voice"] = {**(voices if isinstance(voices, dict) else {}), model: voice}
+    _write(current)
+
+
+def thinking() -> str | None:
+    """The pinned thinking level, or None."""
+    value = _read().get("thinking")
+    return value if isinstance(value, str) else None
+
+
+def save_thinking(level: str) -> None:
+    current = _read()
+    current["thinking"] = level
     _write(current)

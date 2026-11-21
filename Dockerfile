@@ -18,4 +18,4 @@ ARG FRIDAY_VERSION=dev
 ENV FRIDAY_VERSION=$FRIDAY_VERSION STATIC_DIR=/srv/static
 EXPOSE 8670
 HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request as u;u.urlopen('http://127.0.0.1:8670/health')"
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8670", "--ws-max-size", "20971520", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8670", "--ws-max-size", "41943040", "--proxy-headers", "--forwarded-allow-ips", "*"]

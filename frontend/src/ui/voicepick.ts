@@ -4,10 +4,10 @@ import { el } from "../views/dom";
 import "./models.css";
 import "./voicepick.css";
 
-interface Option { id: string; label: string; hint?: string; mark?: string }
+export interface Option { id: string; label: string; hint?: string; mark?: string }
 
 /** Dropdown in the style of the model pickers (same .mp classes); options carry an optional gender mark and style hint. */
-class Dropdown {
+export class Dropdown {
   readonly root = el("div", "mp");
   private btn = el("button", "mp-btn");
   private pop = el("div", "mp-pop");

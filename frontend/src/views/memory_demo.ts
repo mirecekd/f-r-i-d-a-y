@@ -1,6 +1,9 @@
 // frontend/src/views/memory_demo.ts
 import type { Kind, MemLink, MemNode } from "./memory_orbs";
 
+const FILES = ["src/views/app.py", "report-q3.pdf", "budget.csv", "diagram.png", "https://example.org/docs", "notes.md", "schema.json", "main.ts", "manual.epub", "stats.xlsx", "deploy.sh", "photo.jpg"];
+const fileLabel = (i: number): string => FILES[(i / 3) % FILES.length | 0];
+
 /** Deterministic synthetic memory graph (no backend): 4 projects, 14 sessions, the rest memories/concepts/files. */
 export function demoGraph(total = 150): { nodes: MemNode[]; links: MemLink[] } {
   let seed = 7;
@@ -13,7 +16,7 @@ export function demoGraph(total = 150): { nodes: MemNode[]; links: MemLink[] } {
     nodes.push(n);
     return n;
   };
-  const projects = ["FRIDAY", "Dashboard", "Homelab", "Notes"].map((p) => add("p:" + p, p, "project", 1, p));
+  const projects = ["FRIDAY", "Dashboard", "Homelab", "Gantt-like project"].map((p) => add("p:" + p, p, "project", 1, p));
   const sessions = Array.from({ length: 14 }, (_, i) => {
     const p = projects[i % projects.length];
     const s = add(`s:${i}`, `${p.label} session ${i + 1}`, "session", 0.5 + rnd() * 0.4, p.label);
@@ -27,7 +30,7 @@ export function demoGraph(total = 150): { nodes: MemNode[]; links: MemLink[] } {
   for (let i = 0; i < rest; i++) {
     const s = sessions[Math.floor(rnd() * sessions.length)];
     if (i % 3 === 0) {
-      const f = add(`f:${i}`, `src/${["views", "core", "ui", "audio"][i % 4]}/file${i}.ts`, "file", rnd() * 0.4, s.project);
+      const f = add(`f:${i}`, fileLabel(i), "file", rnd() * 0.4, s.project);
       links.push({ source: f.id, target: s.id, kind: "seen_in", weight: 0.4 });
     } else {
       const m = add(`m:${i}`, `Decision ${i}: ${["use", "drop", "split", "cache"][i % 4]} ${concepts[i % concepts.length].label}`, "memory", rnd() * 0.7, s.project);

@@ -64,6 +64,12 @@ class ProposalBook:
         self._open: dict[str, Proposal] = {}
         self._seq = itertools.count(1)
 
+    def clear(self) -> list[dict[str, Any]]:
+        """Forget every open proposal; returns the ops removing their ghosts."""
+        ops = [op for prop in self._open.values() for op in self._removal(prop)]
+        self._open.clear()
+        return ops
+
     def get(self, proposal_id: str) -> Proposal:
         if proposal_id not in self._open:
             raise ModelError(f"unknown proposal '{proposal_id}'; open: {sorted(self._open)}")

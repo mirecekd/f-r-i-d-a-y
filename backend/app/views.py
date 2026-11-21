@@ -5,7 +5,7 @@ import json
 import uuid
 
 VIEW_KINDS = frozenset(
-    {"image", "chart", "table", "markdown", "code", "diagram", "map", "json", "memory_graph", "image_card"}
+    {"image", "chart", "table", "markdown", "code", "diagram", "map", "json", "memory_graph", "image_card", "file_card"}
 )
 MAX_PAYLOAD_BYTES = 2 * 1024 * 1024
 

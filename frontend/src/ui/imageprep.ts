@@ -2,6 +2,7 @@
 
 export const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 export const MAX_BYTES = 12 * 1024 * 1024;
+export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 const DOWNSCALE_OVER = 6 * 1024 * 1024;
 const MAX_SIDE = 2400;
 
@@ -13,7 +14,13 @@ export interface Prepared {
   downscaled: boolean;
 }
 
-/** Message for an unusable file, or null when it may be sent. */
+/** Any non-image file: only the size is checked here, the server detects the type from the content. */
+export function validateFile(file: File): string | null {
+  if (file.size > MAX_FILE_BYTES) return `Soubor je moc velky (${(file.size / 1048576).toFixed(1)} MB, limit 25 MB).`;
+  return null;
+}
+
+/** Message for an unusable image, or null when it may be sent. */
 export function validate(file: File): string | null {
   if (!ALLOWED_MIME.includes(file.type)) return `Nepodporovany format (${file.type || "neznamy"}); jen JPEG, PNG, WebP a GIF.`;
   if (file.size > MAX_BYTES) return `Obrazek je moc velky (${(file.size / 1048576).toFixed(1)} MB, limit 12 MB).`;

@@ -1,5 +1,6 @@
 // frontend/src/ui/chatimage.ts
 import { exifChips } from "../views/exif";
+import { fileChip } from "../views/file_icon";
 import type { ImageEntry } from "./chatpanel";
 
 const STATE_TEXT: Record<ImageEntry["state"], string> = {
@@ -14,6 +15,12 @@ export class ChatImages {
   private bubbles = new Map<string, { el: HTMLElement; entry: ImageEntry; thumb?: string }>();
 
   constructor(private log: HTMLElement, private persist: () => void) {}
+
+  /** Drops every bubble (new conversation) and frees the thumbnail object URLs. */
+  clear(): void {
+    for (const b of this.bubbles.values()) if (b.thumb) URL.revokeObjectURL(b.thumb);
+    this.bubbles.clear();
+  }
 
   has(id: string): boolean {
     return this.bubbles.has(id);
@@ -48,7 +55,8 @@ export class ChatImages {
     const e = b.entry;
     b.el.className = `msg user img ${e.state}`;
     const children: HTMLElement[] = [];
-    const src = e.url ?? b.thumb;
+    const src = e.file ? undefined : e.url ?? b.thumb;
+    if (e.file) children.push(fileChip(e.file.kind, e.name, e.file.size));
     if (src) {
       const img = document.createElement("img");
       img.className = "chat-thumb";
@@ -56,11 +64,13 @@ export class ChatImages {
       img.src = src;
       children.push(img);
     }
-    const name = document.createElement("div");
-    name.className = "chat-imgname";
-    name.textContent = e.w && e.h ? `${e.name} (${e.w} x ${e.h})` : e.name;
-    children.push(name);
-    const status = e.state === "failed" ? e.error ?? "Nahrani selhalo" : STATE_TEXT[e.state];
+    if (!e.file) {
+      const name = document.createElement("div");
+      name.className = "chat-imgname";
+      name.textContent = e.w && e.h ? `${e.name} (${e.w} x ${e.h})` : e.name;
+      children.push(name);
+    }
+    const status = e.state === "failed" ? e.error ?? "Nahrani selhalo" : e.file && e.state === "sending" ? "Nahravam soubor..." : STATE_TEXT[e.state];
     if (status) {
       const st = document.createElement("div");
       st.className = `chat-imgstate ${e.state}`;

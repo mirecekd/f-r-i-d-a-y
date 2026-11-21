@@ -1,18 +1,16 @@
-<img src="https://capsule-render.vercel.app/api?type=waving&height=200&color=0:02060c,55:0a1a24,100:4fd8ff&text=F.R.I.D.A.Y.&fontColor=cfefff&fontSize=58&fontAlignY=38&desc=Voice%20and%20visual%20assistant%20%C2%B7%20live%203D%20%C2%B7%20tools&descSize=20&descColor=4fd8ff&descAlignY=60" width="100%" alt="" />
+<img src="https://capsule-render.vercel.app/api?type=waving&height=200&color=0:202323,55:303635,100:e7ac80&text=F.R.I.D.A.Y.&fontColor=f1d6b4&fontSize=58&fontAlignY=38&desc=Voice%20and%20visual%20assistant%20%C2%B7%20live%203D%20%C2%B7%20tools&descSize=20&descColor=f1d6b4&descAlignY=60" width="100%" alt="" />
 
 <div align="center">
 
-[![Python](https://img.shields.io/badge/Python-3.12-4fd8ff?style=for-the-badge&logo=python&logoColor=4fd8ff&labelColor=0a1a24)](https://www.python.org/)
-[![Three.js](https://img.shields.io/badge/Three.js-WebGL-4fd8ff?style=for-the-badge&logo=threedotjs&logoColor=4fd8ff&labelColor=0a1a24)](https://threejs.org/)
-[![Gemini Live](https://img.shields.io/badge/Gemini-Live-4fd8ff?style=for-the-badge&logo=googlegemini&logoColor=4fd8ff&labelColor=0a1a24)](https://ai.google.dev/gemini-api/docs/live)
-[![FastAPI](https://img.shields.io/badge/FastAPI-backend-4fd8ff?style=for-the-badge&logo=fastapi&logoColor=4fd8ff&labelColor=0a1a24)](https://fastapi.tiangolo.com/)
-[![License MIT](https://img.shields.io/badge/License-MIT-4fd8ff?style=for-the-badge&labelColor=0a1a24)](LICENSE)
-[![Tests](https://img.shields.io/github/actions/workflow/status/mirecekd/f-r-i-d-a-y/tests.yml?branch=main&style=for-the-badge&label=TESTS&color=4fd8ff&labelColor=0a1a24)](https://github.com/mirecekd/f-r-i-d-a-y/actions)
-[![Release](https://img.shields.io/github/v/release/mirecekd/f-r-i-d-a-y?style=for-the-badge&label=RELEASE&color=4fd8ff&labelColor=0a1a24)](https://github.com/mirecekd/f-r-i-d-a-y/releases)
+[![Python](https://img.shields.io/badge/Python-3.12-e7ac80?style=for-the-badge&logo=python&logoColor=e7ac80&labelColor=303635)](https://www.python.org/)
+[![Three.js](https://img.shields.io/badge/Three.js-WebGL-e7ac80?style=for-the-badge&logo=threedotjs&logoColor=e7ac80&labelColor=303635)](https://threejs.org/)
+[![Gemini Live](https://img.shields.io/badge/Gemini-Live-e7ac80?style=for-the-badge&logo=googlegemini&logoColor=e7ac80&labelColor=303635)](https://ai.google.dev/gemini-api/docs/live)
+[![FastAPI](https://img.shields.io/badge/FastAPI-backend-e7ac80?style=for-the-badge&logo=fastapi&logoColor=e7ac80&labelColor=303635)](https://fastapi.tiangolo.com/)
+[![License MIT](https://img.shields.io/badge/License-MIT-e7ac80?style=for-the-badge&labelColor=303635)](LICENSE)
+[![Tests](https://img.shields.io/github/actions/workflow/status/mirecekd/f-r-i-d-a-y/tests.yml?branch=main&style=for-the-badge&label=TESTS&color=e7ac80&labelColor=303635)](https://github.com/mirecekd/f-r-i-d-a-y/actions)
+[![Release](https://img.shields.io/github/v/release/mirecekd/f-r-i-d-a-y?style=for-the-badge&label=RELEASE&color=e7ac80&labelColor=303635)](https://github.com/mirecekd/f-r-i-d-a-y/releases)
 
-[![Buy Me a Beer](https://img.shields.io/badge/If%20you%20like%20my%20work%20you%20can-Buy%20Me%20a%20Beer-4fd8ff?style=for-the-badge&labelColor=0a1a24)](https://buymeacoffee.com/mirecekd)
-
-[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/mirecekd) [![PayPal.me](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?business=LJ5ZF7Q9KMTRW&no_recurring=0&currency_code=USD)
+[![Buy Me a Beer](https://img.shields.io/badge/If%20you%20like%20my%20work%20you%20can-Buy%20Me%20a%20Beer%20%F0%9F%8D%BA-e7ac80?style=for-the-badge&labelColor=303635)](https://buymeacoffee.com/mirecekd) [![PayPal](https://img.shields.io/badge/or%20send%20me%20a%20tip%20via-PayPal-e7ac80?style=for-the-badge&logo=paypal&logoColor=e7ac80&labelColor=303635)](https://www.paypal.me/mirecekd)
 
 </div>
 
@@ -28,7 +26,7 @@ A self-hosted web app: you talk to it (Gemini Live), and it answers by voice whi
 ### 2. Think
 - The model answers and calls tools: the 3D scene DSL, parametric models, view panels, web search, memory, MCP servers. Long jobs such as `draw` run in the background and do not block the conversation. Risky tools wait for your approval.
 
-### 3. Show and tell
+### 3. Show
 - The scene, panels and memory orbs appear in the browser while Friday talks. STOP cancels running tools, agent turns, pending approvals and the voice session, and the button pulses amber while anything is running.
 
 ## ✨ Features
@@ -44,7 +42,7 @@ A self-hosted web app: you talk to it (Gemini Live), and it answers by voice whi
 - **Web search** through Gemini grounding.
 - **Approval flow**: risky tools (writes, remote agents) wait for your confirmation.
 - **Touch and tablet** friendly, with **zoom by drawing** a rectangle on the scene.
-- **Settings panel** for the voice, the language and the models of the agent and chat roles.
+- **Settings panel** for the voice, the language, one thinking level and the models of the agent and chat roles.
 
 Only `GEMINI_API_KEY` is required. The memory service, LiteLLM, MCP servers and the Hermes agent are **optional**:
 each is switched on by its environment variables and is simply absent when they are not set.
@@ -160,4 +158,4 @@ MIT License - see the `LICENSE` file for details.
 
 Miroslav Dvorak - mirecekd@gmail.com
 
-<img src="https://capsule-render.vercel.app/api?type=waving&height=110&section=footer&color=0:4fd8ff,55:0a1a24,100:02060c" width="100%" alt="" />
+<img src="https://capsule-render.vercel.app/api?type=waving&height=110&section=footer&color=0:e7ac80,55:303635,100:202323" width="100%" alt="" />

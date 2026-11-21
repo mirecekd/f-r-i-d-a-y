@@ -23,6 +23,7 @@
 .mg-full .mg-key { display: flex; left: 70px; bottom: 120px; }
 @container (min-width: 520px) { .mg-key { display: flex; } }
 .mg { container-type: size; }
+.mg-gl { width: 18px; height: 18px; flex: none; }
 .mg-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--k); box-shadow: 0 0 8px var(--k); flex: none; }
 .mg-card { position: absolute; right: 8px; top: 62px; width: min(260px, calc(100% - 16px)); padding: 12px; display: flex; flex-direction: column; gap: 6px;
   background: rgba(4,18,30,.88); backdrop-filter: blur(12px); border: 1px solid rgba(79,216,255,.4); border-radius: 10px;

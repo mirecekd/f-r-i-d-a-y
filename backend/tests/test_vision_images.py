@@ -79,8 +79,8 @@ def test_http_upload_then_serve_with_safe_headers(client):
 
 
 def test_http_upload_rejects_non_image_and_oversize(client):
-    bad = client.post("/api/upload", files={"file": ("x.png", b"not an image", "image/png")})
-    assert bad.status_code == 400 and "not a jpeg" in bad.json()["error"]
+    bad = client.post("/api/upload", files={"file": ("x.png", b"", "image/png")})
+    assert bad.status_code == 200 and bad.json()["kind"] == "text"  # not an image: stored as a plain file
     big = client.post("/api/upload", files={"file": ("x.png", b"\x89PNG\r\n\x1a\n" + b"0" * images.MAX_BYTES, "image/png")})
     assert big.status_code == 413
 

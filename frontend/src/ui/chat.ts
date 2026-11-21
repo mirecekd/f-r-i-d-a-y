@@ -43,6 +43,30 @@ export class Chat {
     this.scroll();
   }
 
+  /** Number of conversation messages (not chips or images). */
+  messageCount(): number {
+    return this.store.messages();
+  }
+
+  isOpen(): boolean {
+    return this.panel.isOpen();
+  }
+
+  /** New conversation: empty log, history, live line, caption, chips and image bubbles; `line` is a subtle system note. */
+  reset(line: string): void {
+    this.store.clear();
+    this.log.replaceChildren();
+    this.streams.clear();
+    this.chips.clear();
+    this.images.clear();
+    this.live.textContent = "";
+    this.panel.clearCaption();
+    const el = document.createElement("div");
+    el.className = "msg system";
+    el.textContent = line;
+    this.log.append(el);
+  }
+
   /** Opens the chat panel (an upload started while it was closed). */
   open(): void {
     this.panel.setOpen(true);
@@ -52,6 +76,12 @@ export class Chat {
   imageStart(entry: ImageEntry, thumb: string): void {
     this.store.add(entry);
     this.images.add(entry, thumb);
+  }
+
+  /** Adds the bubble of a non-image file upload (a chip, no thumbnail). */
+  fileStart(entry: ImageEntry): void {
+    this.store.add(entry);
+    this.images.add(entry);
   }
 
   delta(id: string, text: string): void {

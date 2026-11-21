@@ -9,6 +9,7 @@ from typing import Any
 from google import genai
 from google.genai import errors, types
 
+from app.agent import thinking
 from app.agent.llm import OnDelta
 from app.agent.loop import MAX_ROUNDS, Emit, run_tool
 from app.agent.prompt import chat_prompt
@@ -41,6 +42,7 @@ def build_config(model: str, tools: dict[str, Tool]) -> types.LiveConnectConfig:
     plain = {n: replace(t, long=False) for n, t in tools.items()}  # no NON_BLOCKING semantics in text
     return types.LiveConnectConfig(
         response_modalities=[types.Modality.AUDIO if audio else types.Modality.TEXT],
+        thinking_config=thinking.live_config(model),
         system_instruction=chat_prompt(language),
         tools=ToolRegistry(plain).tool_config(),  # pyright: ignore[reportArgumentType]
         output_audio_transcription=types.AudioTranscriptionConfig() if audio else None,
@@ -54,14 +56,20 @@ async def run_turn(model: str, history: list[dict[str, Any]], tools: dict[str, T
     if not key:
         raise RuntimeError("GEMINI_API_KEY is not set")
     client = genai.Client(api_key=key)
-    try:
-        text = await _turn(client, model, history, tools, emit, on_delta)
-    except errors.APIError as e:
-        if model in AUDIO_ONLY or "modalit" not in str(e).lower():
-            raise
-        log.info("%s does not support TEXT responses; using audio with transcription", model)
-        AUDIO_ONLY.add(model)
-        text = await _turn(client, model, history, tools, emit, on_delta)
+    text = ""
+    for attempt in range(3):
+        try:
+            text = await _turn(client, model, history, tools, emit, on_delta)
+            break
+        except errors.APIError as e:
+            if attempt == 2:
+                raise
+            if thinking.LIVE.learn(model, str(e)):
+                continue  # the model rejected the thinking config: retry with the learned one
+            if model in AUDIO_ONLY or "modalit" not in str(e).lower():
+                raise
+            log.info("%s does not support TEXT responses; using audio with transcription", model)
+            AUDIO_ONLY.add(model)
     history.append({"role": "assistant", "content": text})
     return text
 

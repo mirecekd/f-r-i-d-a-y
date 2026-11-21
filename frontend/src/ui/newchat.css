@@ -1,0 +1,10 @@
+/* frontend/src/ui/newchat.css - chat panel header with the "Nova konverzace" button */
+.nc-head { display: flex; align-items: center; gap: 8px; min-height: 44px; flex: none; }
+.nc-title { flex: 1; font-family: Orbitron, sans-serif; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.nc-btn { width: 44px; height: 44px; padding: 0; border-radius: 12px; display: grid; place-items: center; }
+.nc-btn[hidden], .nc-ask[hidden] { display: none; }
+.nc-ask { display: flex; align-items: center; gap: 6px; }
+.nc-q { color: #ffc866; font-size: 13px; }
+.nc-yes, .nc-no { min-width: 52px; height: 44px; border-radius: 12px; }
+.nc-yes { border-color: #ffc866; color: #ffc866; }
+.msg.system { align-self: center; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); padding: 2px 10px; }

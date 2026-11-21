@@ -94,6 +94,10 @@ class Approvals:
             self._allowed.add(tool)
         future.set_result(allow)
 
+    def reset_grants(self) -> None:
+        """New conversation: forget every `remember: session` allow."""
+        self._allowed.clear()
+
     def close(self) -> None:
         """Connection ended: every open question is denied."""
         self._deny_pending()

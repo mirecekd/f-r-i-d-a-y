@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from app.agent import prefs
+from app.agent import prefs, thinking
 from app.voice.language import current_language, english_name, speech_language
 from app.voice.prompt import build_prompt
 from app.voice.tools import ToolRegistry
@@ -23,6 +23,11 @@ VAD_SILENCE_MS = int(os.getenv("FRIDAY_VAD_SILENCE_MS", "700"))
 VAD_PREFIX_MS = int(os.getenv("FRIDAY_VAD_PREFIX_MS", "200"))
 VAD_START = os.getenv("FRIDAY_VAD_START", "low").lower()  # high | low: low ignores short noises
 VAD_END = os.getenv("FRIDAY_VAD_END", "low").lower()  # high | low: low waits longer before ending a turn
+# Speaker profile (phone speaker, no headphones): the model waits longer before it ends a turn, so a faint echo of
+# Friday's own voice does not cut the user's turn or start a new one. Barge-in stays on (START_OF_ACTIVITY_INTERRUPTS).
+SPEAKER_SILENCE_MS = 900
+SPEAKER_PREFIX_MS = 300
+AUDIO_PROFILES = ("speaker", "headphones")
 INPUT_RATE = 16000  # browser -> model, PCM16 mono
 OUTPUT_RATE = 24000  # model -> browser, PCM16 mono
 
@@ -56,7 +61,14 @@ def live_tools(registry: ToolRegistry) -> Any:
     return (voice_registry.tool_config() or []) + [types.Tool(google_search=types.GoogleSearch())]
 
 
-def activity_detection() -> types.AutomaticActivityDetection:
+def activity_detection(profile: str = "headphones") -> types.AutomaticActivityDetection:
+    if profile == "speaker":
+        return types.AutomaticActivityDetection(
+            start_of_speech_sensitivity=types.StartSensitivity.START_SENSITIVITY_LOW,
+            end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_LOW,
+            prefix_padding_ms=SPEAKER_PREFIX_MS,
+            silence_duration_ms=SPEAKER_SILENCE_MS,
+        )
     start = types.StartSensitivity.START_SENSITIVITY_HIGH if VAD_START == "high" else types.StartSensitivity.START_SENSITIVITY_LOW
     end = types.EndSensitivity.END_SENSITIVITY_HIGH if VAD_END == "high" else types.EndSensitivity.END_SENSITIVITY_LOW
     return types.AutomaticActivityDetection(
@@ -67,7 +79,9 @@ def activity_detection() -> types.AutomaticActivityDetection:
     )
 
 
-def build_config(registry: ToolRegistry, handle: str | None = None, briefing: str = "") -> types.LiveConnectConfig:
+def build_config(
+    registry: ToolRegistry, handle: str | None = None, briefing: str = "", profile: str = "headphones"
+) -> types.LiveConnectConfig:
     """`handle` resumes a previous session (valid ~2 h); None starts a fresh one."""
     model, language = live_model(), current_language()
     return types.LiveConnectConfig(
@@ -77,7 +91,11 @@ def build_config(registry: ToolRegistry, handle: str | None = None, briefing: st
             voice_config=types.VoiceConfig(prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=current_voice(model))),
             language_code=speech_language(model, language),
         ),
-        realtime_input_config=types.RealtimeInputConfig(automatic_activity_detection=activity_detection()),
+        realtime_input_config=types.RealtimeInputConfig(
+            automatic_activity_detection=activity_detection(profile),
+            activity_handling=types.ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
+        ),
+        thinking_config=thinking.live_config(model),
         tools=live_tools(registry),
         output_audio_transcription=types.AudioTranscriptionConfig(),
         input_audio_transcription=types.AudioTranscriptionConfig(language_codes=[language]),
@@ -88,9 +106,16 @@ def build_config(registry: ToolRegistry, handle: str | None = None, briefing: st
     )
 
 
-def connect(registry: ToolRegistry, handle: str | None = None, briefing: str = "") -> AbstractAsyncContextManager[Any]:
+def connect(
+    registry: ToolRegistry, handle: str | None = None, briefing: str = "", profile: str = "headphones"
+) -> AbstractAsyncContextManager[Any]:
     """Open a Live session; raises RuntimeError when the API key is missing."""
     key = os.getenv("GEMINI_API_KEY")
     if not key:
         raise RuntimeError("GEMINI_API_KEY is not set")
-    return genai.Client(api_key=key).aio.live.connect(model=live_model(), config=build_config(registry, handle, briefing))
+    return genai.Client(api_key=key).aio.live.connect(model=live_model(), config=build_config(registry, handle, briefing, profile))
+
+
+def learn_connect_error(model: str, error: Exception) -> bool:
+    """Remember a thinking-config rejection of `model`; True when reconnecting with a new config may succeed."""
+    return thinking.LIVE.learn(model, str(error))

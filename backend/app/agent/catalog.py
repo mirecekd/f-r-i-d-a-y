@@ -86,5 +86,10 @@ class CatalogCache:
     def has_role(self, model_id: str, role: str) -> bool:
         return any(e["id"] == model_id and role in e["roles"] for _, es in self._entries.values() for e in es)
 
+    def has_cap(self, model_id: str, cap: str) -> bool:
+        return any(
+            bool(e.get("caps", {}).get(cap)) for _, es in self._entries.values() for e in es if e["id"] == model_id
+        )
+
 
 catalog = CatalogCache()

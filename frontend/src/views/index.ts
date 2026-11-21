@@ -2,6 +2,7 @@
 import { renderChart } from "./chart";
 import { renderCode } from "./code";
 import { renderDiagram } from "./diagram";
+import { renderFileCard } from "./file_card";
 import { renderImage } from "./image";
 import { renderImageCard } from "./image_card";
 import { renderJson } from "./json";
@@ -14,6 +15,7 @@ import type { ViewKind } from "./types";
 export const KINDS: Record<string, ViewKind> = {
   image: { render: renderImage, size: [380, 300] },
   image_card: { render: renderImageCard, size: [400, 600] },
+  file_card: { render: renderFileCard, size: [420, 620] },
   chart: { render: renderChart, size: [420, 300] },
   table: { render: renderTable, size: [420, 240] },
   markdown: { render: renderMarkdown, size: [380, 300] },

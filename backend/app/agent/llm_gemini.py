@@ -7,8 +7,9 @@ import uuid
 from typing import Any
 
 from google import genai
-from google.genai import types
+from google.genai import errors, types
 
+from app.agent import thinking
 from app.agent.llm import ChatResult, LlmError, OnDelta, parse_args, split_data_url
 
 
@@ -77,6 +78,21 @@ def to_declarations(tools: list[dict]) -> list[types.Tool] | None:
     return [types.Tool(function_declarations=decls)] if decls else None
 
 
+async def _open_stream(client: Any, model: str, contents: Any, system: str | None, declared: Any) -> Any:
+    """Start the stream; when the model rejects the thinking config, learn that and retry (at most twice)."""
+    for _ in range(2):
+        config: Any = types.GenerateContentConfig(
+            system_instruction=system, tools=declared, thinking_config=thinking.agent_config(model)
+        )
+        try:
+            return await client.aio.models.generate_content_stream(model=model, contents=contents, config=config)
+        except errors.APIError as e:
+            if not thinking.AGENT.learn(model, str(e)):
+                raise
+    config = types.GenerateContentConfig(system_instruction=system, tools=declared, thinking_config=thinking.agent_config(model))
+    return await client.aio.models.generate_content_stream(model=model, contents=contents, config=config)
+
+
 async def chat_gemini(
     model: str, messages: list[dict], tools: list[dict], on_delta: OnDelta | None = None
 ) -> ChatResult:
@@ -85,12 +101,10 @@ async def chat_gemini(
         raise LlmError("GEMINI_API_KEY is not set")
     system, contents = to_contents(messages)
     declared: Any = to_declarations(tools)  # list[Tool] is invariant vs the SDK's ToolListUnion
-    config: Any = types.GenerateContentConfig(system_instruction=system, tools=declared)
+    client = genai.Client(api_key=key)
+    stream = await _open_stream(client, model, contents, system, declared)
     text: list[str] = []
     calls: list[dict[str, Any]] = []
-    stream = await genai.Client(api_key=key).aio.models.generate_content_stream(
-        model=model, contents=contents, config=config
-    )
     async for chunk in stream:
         for cand in chunk.candidates or []:
             for part in (cand.content.parts if cand.content and cand.content.parts else []):

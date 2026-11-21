@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
 from app.vision import store
-from app.vision.images import MAX_BYTES, MIME_BY_EXT, ImageRejected, inspect_image
+from app.vision.images import MAX_BYTES, MIME_BY_EXT, ImageRejected, inspect_image, sniff_mime
 
 router = APIRouter()
 SERVE_HEADERS = {
@@ -32,10 +32,17 @@ async def ingest(raw: bytes, name: object, mime: str) -> dict:
 
 @router.post("/api/upload")
 async def upload(file: UploadFile, request: Request):
-    """Store an image; analysis is not started here (use the analyze_image tool or the WebSocket upload)."""
-    if int(request.headers.get("content-length") or 0) > MAX_BYTES + 64 * 1024:
+    """Store an image (analysis is not started here) or, for any other file, extract and store it (see app.files)."""
+    from app.files.common import MAX_BYTES as MAX_FILE_BYTES
+    from app.files.upload import ingest_http
+
+    if int(request.headers.get("content-length") or 0) > MAX_FILE_BYTES + 64 * 1024:
+        return JSONResponse({"error": "file is larger than 25 MB"}, status_code=413)
+    raw = await file.read(MAX_FILE_BYTES + 1)
+    if not sniff_mime(raw):
+        return await ingest_http(raw, file.filename)
+    if len(raw) > MAX_BYTES:
         return JSONResponse({"error": "image is larger than 12 MB"}, status_code=413)
-    raw = await file.read(MAX_BYTES + 1)
     try:
         meta = await ingest(raw, file.filename, file.content_type or "")
     except ImageRejected as e:

@@ -1,0 +1,4 @@
+/* frontend/src/ui/thinkingpick.css */
+.tp-wrap { margin-top: 10px; }
+.tp-wrap .mp-btn { min-width: 140px; }
+.tp-hint { margin: 6px 0 0; }

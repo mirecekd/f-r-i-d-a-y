@@ -12,6 +12,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app import __version__
 from app.agent_wiring import AgentSession
+from app.conversation import new_conversation
+from app.files import router as files_router
 from app.mcp import api_router as mcp_router
 from app.memory.handlers import memory_search, show_memory_graph
 from app.memory.warm import lifespan
@@ -32,6 +34,7 @@ app = FastAPI(title="Friday", lifespan=lifespan)
 scene = SceneStore()
 tool_registry = ToolRegistry()  # hook: MCP / Hermes / artist tools register here
 app.include_router(vision_router)
+app.include_router(files_router)
 app.include_router(mcp_router)
 
 
@@ -76,10 +79,15 @@ async def handle(ws: WebSocket, msg: dict, voice: VoiceBridge, agent: AgentSessi
         await ws.send_json({"t": "pong"})
     elif kind == "stop":
         await stopper.stop()
+    elif kind == "new_conversation":
+        await new_conversation(msg, ws.send_json, scene, agent, voice, stopper)
     elif kind == "voice_start":
         await voice.start()
     elif kind == "voice_stop":
         await voice.stop()
+    elif kind == "audio_profile":
+        if not voice.set_audio_profile(msg.get("profile")):
+            await ws.send_json({"t": "error", "message": "audio_profile must be speaker or headphones"})
     elif kind == "chat" and voice.active:
         await voice.send_text(str(msg.get("text", "")))
     elif kind == "chat":
@@ -88,8 +96,8 @@ async def handle(ws: WebSocket, msg: dict, voice: VoiceBridge, agent: AgentSessi
         await voice.frames.handle(msg)
     elif kind == "confirm":
         agent.approvals.resolve(msg)
-    elif kind == "image_upload":
-        await agent.vision.on_upload(msg)
+    elif kind in ("file_upload", "image_upload"):
+        await agent.files.on_upload(msg, voice.send_context if voice.active else None)
     elif kind == "image_to_scene":
         await agent.vision.on_image_to_scene(msg)
     elif kind == "set_model":
@@ -98,6 +106,8 @@ async def handle(ws: WebSocket, msg: dict, voice: VoiceBridge, agent: AgentSessi
         await agent.set_language(msg, voice.active)
     elif kind == "set_voice":
         await agent.set_voice(msg, voice.active)
+    elif kind == "set_thinking":
+        await agent.set_thinking(msg, voice.active)
     elif kind == "demo" and os.getenv("FRIDAY_DEMO") == "1" and msg.get("what") == "views":
         for v in sample_views():
             await ws.send_json(v)

@@ -24,10 +24,12 @@ Authentication is not built in: a reverse proxy in front of the app handles it; 
 | `view_close` | `id` | close a panel |
 | `notice` | `text` | informational, e.g. `reconnecting` while the Live session resumes after GoAway or a drop |
 | `usage` | `prompt?`, `response?`, `thoughts?`, `total?` | token counts reported by Gemini Live |
-| `models` | `catalog`: {id, provider, label, group}[], `pinned`: {agent_model, chat_model}, `language`, `languages`: {code, label}[], `voice`, `voices`: {id, label, gender, style}[] | model catalog, pinned choices, language and voices of the pinned chat model, see "Models"; sent on connect and echoed after `set_model`, `set_language` and `set_voice` |
+| `models` | `catalog`: {id, provider, label, group}[], `pinned`: {agent_model, chat_model}, `language`, `languages`: {code, label}[], `voice`, `voices`: {id, label, gender, style}[], `thinking`, `thinking_levels` | model catalog, pinned choices, language and voices of the pinned chat model, see "Models"; sent on connect and echoed after `set_model`, `set_language`, `set_voice` and `set_thinking` |
 | `confirm_request` | `id`, `tool`, `summary`, `args`, `expires_in` | a risky tool wants to run; the browser must answer with `confirm` within `expires_in` seconds; `args` is truncated and values under keys matching `key\|token\|secret\|password` are `***` |
 | `confirm_closed` | `id`, `reason`: `timeout\|cancelled` | the question is over without an answer (timeout counts as deny); drop the prompt |
+| `file_ready` | `id`, `client_id?`, `kind`, `name`, `size`, `url`, `meta` | a non-image file is stored and extracted; see "Files" |
 | `image_ready` | `id`, `client_id?`, `url`, `w`, `h`, `exif` | an uploaded image is stored; see "Images" |
+| `conversation_reset` | `clear_scene` | answer to `new_conversation`: the browser empties its chat log and history, see "Conversation" |
 | `error` | `message`, `id?` | non-fatal error (`id` echoes the `image_upload` it answers) |
 
 While a voice session is open, `chat` text goes to the same Live session as a user turn.
@@ -41,12 +43,16 @@ while they run, and `tool ok|error` when done; the model announces the late resu
 | `chat` | `text`, `attachments?` | typed message |
 | `voice_start` | | open a Gemini Live session; binary PCM16 16 kHz frames are then forwarded to it |
 | `voice_stop` | | close the Live session |
+| `audio_profile` | `profile`: `speaker\|headphones` | output device class (speaker = echo gate on in the browser); stored on the bridge and applied at the next voice session start, see `docs/audio-echo.md`; any other value gets an `error` |
 | `stop` | | STOP button / Esc: cancel long tools, agent turns and approvals (denied), end the voice session, back to `idle`; the socket stays open; server replies `stopped` and `notice` "Zastaveno" |
+| `new_conversation` | `clear_scene?`: bool | start over, see "Conversation" |
 | `select` | `ids`: string[] | scene selection, so "make this bigger" resolves |
+| `file_upload` | `id?`, `name`, `mime`, `data_b64`, `analyze?` | upload any file (<= 25 MB decoded); images are routed to the image path; see "Files" |
 | `image_upload` | `id?`, `name`, `mime`, `data_b64`, `analyze?` | upload one image (<= 12 MB decoded, jpeg/png/webp/gif); see "Images" |
 | `image_to_scene` | `id` | add the stored image to the 3D scene (same as the `show_in_scene` tool); unknown id answers `error` |
 | `set_model` | `role`: `agent\|chat`, `model`: catalog id | pin a model (persisted), server echoes `models` |
 | `set_language` | `language`: code from `languages` | pin the conversation language (persisted), server echoes `models`; unknown code answers `error` |
+| `set_thinking` | `level`: one of `thinking_levels` | pin the thinking level (persisted), server echoes `models`; unknown level answers `error` |
 | `set_voice` | `voice`: id from `voices` | pin the voice of the current chat model (persisted per model), server echoes `models`; a voice the model does not offer answers `error` |
 | `confirm` | `id`, `allow`: bool, `remember?`: `once\|session` | answer to `confirm_request`; `session` remembers an allow for that tool name on this connection only |
 | `frame` | `source`: `camera\|screen`, `mime`: `image/jpeg`, `data_b64` | one live vision frame for the model, see "Live vision input" |
@@ -55,6 +61,22 @@ while they run, and `tool ok|error` when done; the model announces the late resu
 | `memory_search` | `query`, `project?` | HUD/search box: server sends a `notice` ("Hledam v pameti..."), then a query-focused `memory_graph` view with `highlight`, `hits` and `summary` (or `error` when agentmemory is down or `query` is empty) |
 | `ping` | | keepalive |
 | `demo` | `what: "views"` | server sends one sample of every view kind; only when `FRIDAY_DEMO=1` |
+
+## Conversation
+
+`{t:'new_conversation', clear_scene?: bool}` (button "Nova konverzace" in the chat panel header, Ctrl+Shift+N while the
+chat is open; the UI asks "Opravdu?" for 3 s when the chat holds more than 3 messages). The server:
+
+1. stops everything exactly like `stop` (long tools, agent turns, approvals denied, voice session ended);
+2. resets the text-chat history to the system prompt, drops the voice resumption handle, transcripts and briefing,
+   open model proposals (their ghosts are removed) and the current-model pointer, and forgets the approval
+   grants given with `remember: session`;
+3. with `clear_scene: true` also clears the scene (`scene` op `clear`) and the selection; the browser closes the view panels;
+4. answers `{t:'conversation_reset', clear_scene}` and `notice` "Nova konverzace".
+
+The next `voice_start` opens a fresh Live session (no resumption) and fetches the agent-memory startup briefing again.
+Kept: the scene and view panels (unless `clear_scene`), pinned models, language, voice, uploaded files, saved 3D
+models, agent memory, MCP connections and the tool registry. Idempotent and safe while idle or while voice is active.
 
 ## Live vision input
 
@@ -158,6 +180,24 @@ plus LiteLLM chat models (`GET {LITELLM_BASE_URL}/models`, ids containing `embed
 label `name (region)`. `set_model` with an id missing from the catalog answers `error`. Without a pin the defaults are
 `FRIDAY_AGENT_MODEL` / `FRIDAY_CHAT_MODEL`, then `gemini-flash-latest`.
 
+### Thinking level
+
+One setting for every model: `thinking` in `prefs.json` (`minimal` | `low` | `medium` | `high`, default `high`,
+fallback env `FRIDAY_THINKING`), read on every request. `models` carries `thinking` (current) and `thinking_levels`;
+`{t:'set_thinking', level}` validates (unknown level answers `error`), persists, echoes `models` and, during a voice
+session, sends the `notice` "applies to the next voice session". Mapping (`app/agent/thinking.py`):
+
+- Live voice and Live text: `thinking_config.thinking_level` (`include_thoughts=false`). Probed: `gemini-3.8-live`
+  rejects any thinking config (1007 "Thinking level is not supported"), so it is omitted there; `gemini-3.8-live-extended-thinking`
+  requires one (without it 1007 "must be specified"; MINIMAL is rejected, the next level up is sent); `gemini-3.1-flash-live-preview`
+  and the native-audio models accept all four levels.
+- Gemini agent (`generateContent`): `thinking_level` for 3.x models; `gemini-2.5-*` accept only `thinking_budget`
+  (high -1 dynamic, medium 8192, low 1024, minimal 0, or 128 for lite). `gemini-3.1-pro-preview`, `gemini-3.8-flash`, `gemini-flash-latest`
+  and `gemini-4-neon` reject MINIMAL. A rejection is learned per model at runtime and the request is retried once.
+- LiteLLM: `reasoning_effort` (`minimal` -> `low`), only for models whose catalog `caps.reasoning` is true; a 400 on a
+  request carrying it is retried once without it and remembered per model.
+- A first Live connect failure ends with an `error` ("voice model X did not accept the connection: ...") and `state: idle`.
+
 ### Language and voice
 
 `prefs.json` additionally holds `language` (default `cs-CZ`, fallback env `GEMINI_LANGUAGE`; also `en-US`, `sk-SK`,
@@ -174,6 +214,15 @@ Probed against the real API (Live turn with audio out, all 30 prebuilt voices): 
 (override table `MODEL_VOICES` in `app/voice/voices.py`). The native-audio models reject `cs-CZ`, `sk-SK` and `es-ES`
 (close 1007 "Unsupported language code"); for them the code is omitted from `speech_config` and the model follows the
 prompt. `gemini-3.8-live-extended-thinking` needs a thinking level and does not connect with this config.
+
+### Speaker profile and self-echo
+
+With `audio_profile: speaker` the next Live session uses `automatic_activity_detection` with `silence_duration_ms` 900,
+`prefix_padding_ms` 300 and low start/end sensitivity (constants `SPEAKER_*` in `voice/session.py`); `headphones` uses
+the `FRIDAY_VAD_*` values above. `activity_handling` is always `START_OF_ACTIVITY_INTERRUPTS` (barge-in stays on). The relay
+also drops a model turn whose input transcript matches Friday's own last output transcript (normalised, similarity
+>= 0.85, within 3 s): audio of that turn is not forwarded, the browser gets `interrupted` and, once per connection,
+`notice` "Ozvena potlacena" (`voice/selfecho.py`).
 
 ### Czech recognition
 
@@ -272,6 +321,7 @@ which rejects unknown kinds and payloads over 2 MB. Model text is never inserted
 | `map` | `{center: [lat, lon], zoom?: 0-18, markers?: [{lat, lon, label?}]}` - 3x3 OpenStreetMap tile grid |
 | `json` | `{value}` - collapsible tree |
 | `memory_graph` | `{nodes: [{id, label, kind: project\|session\|memory\|concept\|file, weight 0-1, ts (ms epoch, 0 = none), project}], links: [{source, target, kind, weight}]}` - memory orbs (3d-force-graph); at most ~300 nodes, every link endpoint is a node id; link kinds: `in` (session/memory to project), `seen_in` (concept/file to session), `tagged` (memory to concept), plus agentmemory edge types (`uses`, `modifies`, `related_to`, ...) Optional keys of a query-focused graph (`memory_search`, `show_memory_graph` with `query`): `query` (string), `highlight` (node ids, most relevant first: the orbs to light up; the rest of `nodes` is 1-hop context, at most 120 nodes, hits first), `hits` (top 12 `{id, label, kind, score, snippet <= 160 chars, ts, project}`) and `summary` (<= 400 chars of plain text built from the top hits, no model call; "Nic nenalezeno k dotazu ..." with empty `nodes`/`highlight` when nothing matches). Node ids are the same as in the generic graph. Labels/snippets are untrusted memory text: control characters stripped, render as text only. |
+| `file_card` | see "Files" - tile for a dropped document (summary, outline, tables, excerpt, download link, buttons) |
 | `image_card` | `{url, summary, kind, people_count, objects: [{label, count}], text_found: string[], exif: {camera_make?, camera_model?, taken_at?, orientation?, lat?, lon?}, notes, scene?, location_hint?, rooms?: [{name, dimensions}], dimensions_hint?, confidence?}` - visual overview of an uploaded image; `kind` is `photo\|floorplan\|screenshot\|drawing\|document\|other`, `people_count` may be null |
 
 ## Images
@@ -296,6 +346,35 @@ Analysis uses the pinned `agent` model when it supports vision (Gemini models, L
 `/model/info` says `supports_vision`), else `gemini-flash-latest`, through `agent.llm.chat` with OpenAI-style image
 parts (`{type:'image_url', image_url:{url:'data:...'}}`; Gemini receives inline_data). The model must answer one strict
 JSON object; an invalid reply is retried once, then the analysis fails with an error. Image content is untrusted data.
+
+## Files
+
+Any file can be dropped or attached (`backend/app/files/`). The browser sends
+`{t:'file_upload', id?, name, mime, data_b64, analyze?}` (`image_upload` still works and stays image-only; a
+`file_upload` whose content is an image takes the image path). The type is decided from the content (magic bytes,
+zip members) and the extension; the declared mime is ignored. Kinds: `image`, `pdf`, `docx`, `xlsx`, `epub`, `odt`,
+`zip` (listing only, never unpacked), `csv` (also tsv), `text`, `markdown`, `code`, `json`, `yaml`, `toml`, `xml`,
+`html`, `rtf`, `audio`, `video` (stored, "transcription not available yet"), `binary` (hex head and size).
+A file whose name says pdf/docx/... but whose content is not that format is kept as `binary` with a `note`.
+
+Limits: 25 MB decoded, 200 kB of extracted text (`truncated`), tables 200 rows x 30 columns, zip archives at most
+5000 entries / 200 MB unpacked / a compression ratio of 200 (else the file is kept with a `note` and no text). XML goes
+through defusedxml, HTML is reduced to text without scripts or styles, control characters are removed, nothing is
+fetched and no macro is executed. Files are stored as `<uuid>.bin` (+ `.txt` text and `.file.json` metadata) in
+`FRIDAY_DATA_DIR/uploads`; the original name is metadata only.
+
+The server answers `file_ready {id, client_id?, kind, name, size, url, meta}` and, for non-images, emits a `file_card`
+view `{id, name, kind, size, title, summary, meta, outline[], tables?: [{name, columns, rows}] (50 rows), text_excerpt
+(6000 chars), truncated, download_url, note?}`. `GET /api/files/<id>` downloads the original with
+`Content-Disposition: attachment`, `nosniff` and a sandbox CSP. `POST /api/upload` accepts any file (images behave as
+before; others return the `file_ready` payload). With a Live session active the model also gets a context turn
+"User attached <name> (<kind>, <n> pages); use read_file to read it" without being asked to answer.
+The card buttons send chat messages ("Precti dalsi cast souboru <name>", "Shrn soubor <name>"). Extracted text is
+untrusted data: tools wrap it in `<file-content>` and say so.
+
+Model tools: `read_file(file_id, part?)` (20 kB per part), `list_files()`, `file_to_scene(file_id)` (emits the
+`file_card` tile), `summarize_file(file_id)` (agent model, first ~30 kB, <= 600 chars). Run uvicorn with a
+`--ws-max-size` of at least 36 MB (a 25 MB file is ~34 MB of base64).
 
 ## Model tools
 

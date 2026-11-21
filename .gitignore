@@ -15,3 +15,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
+
+# local-only compose additions (networks of other services on this host)
+docker-compose.override.yml

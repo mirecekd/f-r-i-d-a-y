@@ -32,6 +32,13 @@ class _GoAway(Exception):
     """The server announced that it will close the connection soon."""
 
 
+class ConnectError(RuntimeError):
+    """The first Live connection of a session failed; `str()` is the readable text shown in the UI."""
+
+    def __init__(self, model: str, cause: Exception):
+        super().__init__(f"voice model {model} did not accept the connection: {cause}")
+
+
 class VoiceBridge:
     def __init__(
         self, send_json: SendJson, send_bytes: SendBytes, registry: ToolRegistry, approvals: Approvals | None = None
@@ -41,6 +48,8 @@ class VoiceBridge:
         self._session: Any = None
         self._runner = ToolRunner(registry, None, send_json, approvals)
         self._relay = Relay(send_json, send_bytes, lambda: bool(self._runner.long_running))
+        self.audio_profile = "headphones"  # set by the browser's `audio_profile`, read when a session starts
+        self._profile = self.audio_profile  # profile of the running session
         self._task: asyncio.Task | None = None
         self._ready = asyncio.Event()
         self._handle: str | None = None  # latest resumption handle (valid ~2 h)
@@ -59,9 +68,17 @@ class VoiceBridge:
     async def stop_tools(self) -> list[str]:
         return await self._runner.stop_all()
 
+    def set_audio_profile(self, profile: object) -> bool:
+        """Stores the browser's output device class; it takes effect at the next session start."""
+        if profile not in live.AUDIO_PROFILES:
+            return False
+        self.audio_profile = str(profile)
+        return True
+
     async def start(self) -> None:
         if self.active:
             return
+        self._profile = self.audio_profile
         self._ready.clear()
         self._handle = None
         self._task = asyncio.create_task(self._run())
@@ -72,6 +89,13 @@ class VoiceBridge:
         if task and not task.done():
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
+
+    async def reset_context(self) -> None:
+        """New conversation: forget the resumption handle, transcripts and briefing so the next start() is a fresh Live session."""
+        self._handle = None
+        self._briefing = ""
+        self._relay.reset()
+        await self.frames.handle({"t": "frames_stop"})
 
     async def send_audio(self, pcm: bytes) -> None:
         if self._session is None:
@@ -95,15 +119,27 @@ class VoiceBridge:
             return
         await self._relay.set_state("thinking")
 
+    async def send_context(self, text: str) -> None:
+        """Add a text turn to the Live conversation without asking for a reply (like the image source tag)."""
+        if self._session is None:
+            return
+        try:
+            await self._session.send_client_content(
+                turns=types.Content(role="user", parts=[types.Part(text=text)]), turn_complete=False
+            )
+        except Exception as e:
+            log.debug("context dropped: %s", e)
+
     async def _run(self) -> None:
         self._retries = 0
         connected_once = False
+        config_retried = False
         self._briefing = await briefing_or_empty()
         try:
             while True:
                 goaway = False
                 try:
-                    async with live.connect(self._registry, self._handle, self._briefing) as session:
+                    async with live.connect(self._registry, self._handle, self._briefing, self._profile) as session:
                         self._session = session
                         self._runner.attach(session)
                         connected_once = True
@@ -117,7 +153,10 @@ class VoiceBridge:
                     goaway = True
                 except Exception as e:
                     if not connected_once:
-                        raise
+                        if not config_retried and live.learn_connect_error(live.live_model(), e):
+                            config_retried = True
+                            continue  # the model rejected the thinking config: retry once with the learned one
+                        raise ConnectError(live.live_model(), e) from e
                     log.warning("voice connection lost: %s: %s", type(e).__name__, e)
                 finally:
                     self._session = None
@@ -134,7 +173,8 @@ class VoiceBridge:
             raise
         except Exception as e:
             log.exception("voice session failed")
-            await self._send_json({"t": "error", "message": f"voice: {type(e).__name__}: {e}"[:300]})
+            text = str(e) if isinstance(e, ConnectError) else f"voice: {type(e).__name__}: {e}"
+            await self._send_json({"t": "error", "message": text[:300]})
         finally:
             await self._runner.cancel_all()
             self._ready.set()

@@ -1,6 +1,16 @@
-<img src="https://capsule-render.vercel.app/api?type=waving&height=120&color=0:02060c,55:0a1a24,100:4fd8ff&text=F.R.I.D.A.Y.&fontColor=cfefff&fontSize=40&fontAlignY=45&desc=Quickstart&descSize=18&descColor=4fd8ff&descAlignY=68" width="100%" alt="" />
+<img src="https://capsule-render.vercel.app/api?type=waving&height=120&color=0:202323,55:303635,100:e7ac80&text=F.R.I.D.A.Y.&fontColor=f1d6b4&fontSize=40&fontAlignY=45&desc=Quickstart&descSize=18&descColor=f1d6b4&descAlignY=68" width="100%" alt="" />
 
-## 🚀 Quickstart
+# F.R.I.D.A.Y. - quickstart
+
+Everything below gets you from a clone to a talking assistant in a few minutes. Friday is a web app: a backend in a container and a browser tab with the 3D scene.
+
+## 0. What you need (one time)
+
+| What | Why | Check |
+|---|---|---|
+| Docker with Compose | runs the backend and the built frontend | `docker compose version` |
+| A Gemini API key | the voice and web search | key from Google AI Studio |
+| A browser with a microphone | you talk to it | `localhost` or HTTPS is required |
 
 ## 1. Docker (recommended)
 
@@ -12,6 +22,8 @@ docker compose up -d --build
 ```
 
 Open <http://127.0.0.1:8670>, click the orb and allow the microphone (browsers need HTTPS or localhost for it).
+
+Check it works: say "hello"; the orb pulses while Friday answers by voice. Pick the voice and the language in the settings panel.
 To use the prebuilt image instead of building, set `image: ghcr.io/mirecekd/f-r-i-d-a-y:latest` and run
 `docker compose pull && docker compose up -d`.
 
@@ -43,4 +55,4 @@ the port on `127.0.0.1` for that reason.
 
 Press the round STOP button (or Esc) at any time to halt playback, the microphone and every running tool.
 
-<img src="https://capsule-render.vercel.app/api?type=waving&height=110&section=footer&color=0:4fd8ff,55:0a1a24,100:02060c" width="100%" alt="" />
+<img src="https://capsule-render.vercel.app/api?type=waving&height=110&section=footer&color=0:e7ac80,55:303635,100:202323" width="100%" alt="" />

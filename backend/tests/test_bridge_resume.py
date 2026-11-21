@@ -62,7 +62,7 @@ class Harness:
         monkeypatch.setattr(bridge_mod, "BACKOFF_BASE_S", 0)
 
         @asynccontextmanager
-        async def fake_connect(_registry, handle=None, briefing=""):
+        async def fake_connect(_registry, handle=None, briefing="", profile="headphones"):
             self.handles.append(handle)
             item = self.sessions.pop(0)
             if isinstance(item, Exception):
