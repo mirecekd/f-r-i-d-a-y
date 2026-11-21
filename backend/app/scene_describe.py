@@ -18,6 +18,12 @@ def _line(o: dict, depth: int, selected: set[str]) -> str:
         parts.append("scale" + (_vec(o["scale"]) if isinstance(o["scale"], list) else _num(o["scale"])))
     if "color" in o:
         parts.append(o["color"])
+    if isinstance(o.get("ref"), dict):
+        parts.append(f"ref={o['ref']['type']}:{o['ref']['id']}")
+    if o["kind"] == "entity":
+        parts.append(f"{o.get('shape')} \"{str(o.get('title', ''))[:40]}\"")
+    if o["kind"] == "link":
+        parts.append(f"{o.get('from')}->{o.get('to')}")
     if o.get("label"):
         parts.append(f'"{o["label"]}"')
     if o["kind"] in ("text", "label") and o.get("text"):

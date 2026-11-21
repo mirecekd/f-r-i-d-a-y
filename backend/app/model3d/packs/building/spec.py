@@ -49,7 +49,7 @@ def normalize(spec: object) -> dict[str, Any]:
     if not isinstance(raw, list) or not raw:
         raise BuildingSpecError("spec.storeys must be a non-empty list")
     out: dict[str, Any] = {"name": str(spec.get("name", "building")), "units": "m", "storeys": [],
-                           "roof": _roof(spec.get("roof"))}
+                           "roof": _roof(spec.get("roof")), "wall_color": _color(spec.get("wall_color"), "wall_color")}
     room_ids: set[str] = set()
     sids: set[str] = set()
     elevation = 0.0
@@ -120,3 +120,12 @@ def _roof(r: object) -> dict[str, Any] | None:
         raise BuildingSpecError(f"roof.type must be one of {ROOF_TYPES}")
     return {"type": r.get("type", "flat"), "overhang": num(r.get("overhang", 0.35), "roof.overhang", 0.0),
             "color": r.get("color")}
+
+
+def _color(v: object, what: str) -> str | None:
+    """Optional `#rrggbb` colour; None when absent."""
+    if v is None:
+        return None
+    if not isinstance(v, str) or not re.fullmatch(r"#[0-9a-fA-F]{6}", v):
+        raise BuildingSpecError(f"{what} must be a #rrggbb colour")
+    return v.lower()

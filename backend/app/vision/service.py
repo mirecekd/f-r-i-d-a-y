@@ -9,7 +9,7 @@ from collections.abc import Callable
 from typing import Any
 
 from app.agent.llm import LlmError
-from app.scene_schema import SceneError
+from app.entities.make import add_entity
 from app.tools_friday.ctx import Ctx
 from app.views import ViewError, view_msg
 from app.vision import store
@@ -20,7 +20,6 @@ from app.vision.upload import ingest, ready_payload
 
 log = logging.getLogger("friday.vision")
 MAX_B64_CHARS = (MAX_BYTES + 2) // 3 * 4 + 4
-LONG_SIDE = 3.0  # scene units of the longer image edge when scale is 1
 
 
 def card_data(meta: dict[str, Any], analysis: dict[str, Any]) -> dict[str, Any]:
@@ -44,31 +43,38 @@ class VisionService:
         self._jobs: dict[str, asyncio.Task] = {}
         self._background: set[asyncio.Task] = set()
 
-    async def analyze(self, meta: dict[str, Any], force: bool = False) -> dict[str, Any]:
-        """The analysis of one stored image (cached in its metadata); emits the image_card view when computed."""
+    async def analyze(self, meta: dict[str, Any], force: bool = False, card: bool = True) -> dict[str, Any]:
+        """The analysis of one stored image (cached in its metadata); emits the image_card view when it was computed
+        (or joined) and `card` is true. The background analysis after an upload passes card=False."""
         if meta.get("analysis") and not force:
             return meta["analysis"]
         job = self._jobs.get(meta["id"])
         if job is None:
             job = self._jobs[meta["id"]] = asyncio.create_task(self._run(meta))
             job.add_done_callback(lambda _t, i=meta["id"]: self._jobs.pop(i, None))
-        return await asyncio.shield(job)
+        analysis = await asyncio.shield(job)
+        if card:
+            await self.show_card(meta, analysis)
+        return analysis
 
     async def _run(self, meta: dict[str, Any]) -> dict[str, Any]:
         jpeg = await asyncio.to_thread(store.analysis_jpeg, meta["id"])
         model, analysis = await analyze_picture(jpeg, meta["exif"], self.model_for())
         meta["analysis"] = {**analysis, "model": model}
         await asyncio.to_thread(store.write_meta, meta)
+        return meta["analysis"]
+
+    async def show_card(self, meta: dict[str, Any], analysis: dict[str, Any]) -> None:
+        """Emit the image_card view of an analysed image."""
         try:
             msg = view_msg("image_card", card_data(meta, analysis), meta["name"], f"image-{meta['id'][:8]}")
         except ViewError as e:
             log.warning("image_card rejected: %s", e)
         else:
             await self.ctx.emit(msg)
-        return meta["analysis"]
 
     async def on_upload(self, msg: dict[str, Any]) -> None:
-        """Handle `{t:'image_upload', id?, name, mime, data_b64, analyze?}`: store, announce, analyze in background."""
+        """Handle `{t:'image_upload', id?, name, mime, data_b64, analyze?}`: store, announce, place on the desk, analyze in background."""
         client_id = msg.get("id")
         data_b64 = msg.get("data_b64")
         try:
@@ -83,6 +89,7 @@ class VisionService:
             await self.ctx.emit({"t": "error", "message": f"image_upload: {e}", **({"id": client_id} if client_id else {})})
             return
         await self.ctx.emit({"t": "image_ready", **ready_payload(meta), **({"client_id": client_id} if client_id else {})})
+        await self.show_in_scene(meta["id"])  # the file lands on the desk first; its card opens with entity_open
         if msg.get("analyze") is not False:
             task = asyncio.create_task(self._analyze_in_background(meta))
             self._background.add(task)
@@ -90,7 +97,7 @@ class VisionService:
 
     async def _analyze_in_background(self, meta: dict[str, Any]) -> None:
         try:
-            analysis = await self.analyze(meta)
+            analysis = await self.analyze(meta, card=False)
         except (LlmError, AnalysisParseError, OSError) as e:
             log.warning("image analysis failed: %s", type(e).__name__)
             await self.ctx.emit({"t": "error", "message": f"image analysis failed: {type(e).__name__}: {e}"[:300]})
@@ -98,26 +105,11 @@ class VisionService:
             await self.ctx.emit({"t": "notice", "text": f"Image analysed: {analysis['summary'][:120]}"})
 
     async def show_in_scene(self, image_id: Any, pos: Any = None, scale: Any = None) -> dict[str, Any]:
-        """Add the stored image to the scene as an `image` object sized by its aspect ratio and emit the scene op."""
+        """Add the stored image to the scene as an `entity` tile (thumbnail keeps the aspect) and emit the scene op."""
         meta = store.resolve(image_id)
         if meta is None:
             return {"error": "unknown image_id; call list_images"}
-        aspect = meta["w"] / meta["h"]
-        w, h = (LONG_SIDE, LONG_SIDE / aspect) if aspect >= 1 else (LONG_SIDE * aspect, LONG_SIDE)
-        obj: dict[str, Any] = {
-            "id": f"img-{meta['id'][:8]}", "kind": "image", "url": store.url_of(meta),
-            "w": round(w, 3), "h": round(h, 3), "label": meta["name"],
-            "pos": pos or [0, h / 2 + 0.1, 0],
-        }
-        if scale is not None:
-            obj["scale"] = scale
-        ops = [{"op": "add", "obj": obj}]
-        try:
-            self.ctx.scene.apply(ops)
-        except SceneError as e:
-            return {"error": str(e)}
-        await self.ctx.emit({"t": "scene", "ops": ops})
-        return {"ok": True, "object_id": obj["id"], "w": obj["w"], "h": obj["h"]}
+        return await add_entity(self.ctx.scene, self.ctx.emit, **store.entity_args(meta), pos=pos, scale=scale)
 
     async def on_image_to_scene(self, msg: dict[str, Any]) -> None:
         """Handle `{t:'image_to_scene', id}` (the image_card button): same as the show_in_scene tool; errors go to the chat."""

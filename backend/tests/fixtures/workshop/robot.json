@@ -1,0 +1,22 @@
+{
+  "name": "Simple robot",
+  "units": "mm",
+  "params": {
+    "height": {"value": 600, "min": 300, "max": 1200, "label": "Height", "unit": "mm"},
+    "arm_swing": {"value": 20, "min": -60, "max": 60, "label": "Arm swing", "unit": "deg"}
+  },
+  "parts": [
+    {"id": "torso", "kind": "box", "size": ["=height*0.3", "=height*0.35", "=height*0.18"], "pos": [0, "=height*0.55", 0], "color": "#8fa4b8", "tags": ["body"]},
+    {"id": "head", "kind": "sphere", "r": "=height*0.09", "pos": [0, "=height*0.82", 0], "color": "#cfd8e0", "tags": ["head"]},
+    {"id": "eye", "kind": "sphere", "r": "=height*0.016", "pos": ["=height*0.035", "=height*0.84", "=height*0.08"], "color": "#ffd23f", "mirror": "x", "tags": ["head"]},
+    {"id": "antenna", "kind": "cylinder", "r": 4, "h": "=height*0.08", "pos": [0, "=height*0.95", 0], "color": "#505860", "tags": ["head"]},
+    {"id": "tip", "kind": "sphere", "r": 8, "pos": [0, "=height*0.99", 0], "color": "#ff5a5a", "tags": ["head"]},
+    {"id": "arm", "kind": "group", "pos": ["=height*0.2", "=height*0.68", 0], "rot": ["=arm_swing", 0, 0], "mirror": "x", "tags": ["arms"]},
+    {"id": "upper_arm", "kind": "capsule", "r": "=height*0.035", "h": "=height*0.22", "parent": "arm", "pos": [0, "=-height*0.1", 0], "color": "#8fa4b8", "tags": ["arms"]},
+    {"id": "hand", "kind": "sphere", "r": "=height*0.04", "parent": "arm", "pos": [0, "=-height*0.22", 0], "color": "#cfd8e0", "tags": ["arms"]},
+    {"id": "leg", "kind": "group", "pos": ["=height*0.08", "=height*0.37", 0], "mirror": "x", "tags": ["legs"]},
+    {"id": "thigh", "kind": "box", "size": ["=height*0.07", "=height*0.34", "=height*0.08"], "parent": "leg", "pos": [0, "=-height*0.17", 0], "color": "#6f8296", "tags": ["legs"]},
+    {"id": "foot", "kind": "box", "size": ["=height*0.1", "=height*0.03", "=height*0.16"], "parent": "leg", "pos": [0, "=-height*0.355", "=height*0.03"], "color": "#505860", "tags": ["legs"]},
+    {"id": "belt", "kind": "torus", "r": "=height*0.13", "tube": "=height*0.039", "pos": [0, "=height*0.4", 0], "color": "#ffd23f", "tags": ["body"]}
+  ]
+}

@@ -44,12 +44,15 @@ while they run, and `tool ok|error` when done; the model announces the late resu
 | `voice_start` | | open a Gemini Live session; binary PCM16 16 kHz frames are then forwarded to it |
 | `voice_stop` | | close the Live session |
 | `audio_profile` | `profile`: `speaker\|headphones` | output device class (speaker = echo gate on in the browser); stored on the bridge and applied at the next voice session start, see `docs/audio-echo.md`; any other value gets an `error` |
-| `stop` | | STOP button / Esc: cancel long tools, agent turns and approvals (denied), end the voice session, back to `idle`; the socket stays open; server replies `stopped` and `notice` "Zastaveno" |
+| `stop` | | STOP button / Esc (or the optional open-palm hand gesture, see ui-gestures.md): cancel long tools, agent turns and approvals (denied), end the voice session, back to `idle`; the socket stays open; server replies `stopped` and `notice` "Zastaveno" |
 | `new_conversation` | `clear_scene?`: bool | start over, see "Conversation" |
 | `select` | `ids`: string[] | scene selection, so "make this bigger" resolves |
 | `file_upload` | `id?`, `name`, `mime`, `data_b64`, `analyze?` | upload any file (<= 25 MB decoded); images are routed to the image path; see "Files" |
 | `image_upload` | `id?`, `name`, `mime`, `data_b64`, `analyze?` | upload one image (<= 12 MB decoded, jpeg/png/webp/gif); see "Images" |
-| `image_to_scene` | `id` | add the stored image to the 3D scene (same as the `show_in_scene` tool); unknown id answers `error` |
+| `image_to_scene` | `id` | add the stored image to the 3D scene as an `entity` tile (same as the `show_in_scene` tool); unknown id answers `error` |
+| `entity_open` | `id` | emit the `image_card` / `file_card` of the entity's stored item; errors answer `error` |
+| `entity_link` | `from`, `to` | add a `link` object between two scene objects; the scene patch is broadcast |
+| `entity_remove` | `id` | delete the entity and its links from the scene (the stored file or image stays) |
 | `set_model` | `role`: `agent\|chat`, `model`: catalog id | pin a model (persisted), server echoes `models` |
 | `set_language` | `language`: code from `languages` | pin the conversation language (persisted), server echoes `models`; unknown code answers `error` |
 | `set_thinking` | `level`: one of `thinking_levels` | pin the thinking level (persisted), server echoes `models`; unknown level answers `error` |
@@ -61,6 +64,23 @@ while they run, and `tool ok|error` when done; the model announces the late resu
 | `memory_search` | `query`, `project?` | HUD/search box: server sends a `notice` ("Hledam v pameti..."), then a query-focused `memory_graph` view with `highlight`, `hits` and `summary` (or `error` when agentmemory is down or `query` is empty) |
 | `ping` | | keepalive |
 | `demo` | `what: "views"` | server sends one sample of every view kind; only when `FRIDAY_DEMO=1` |
+
+### Workshop (browser side)
+Sent by the browser: `workshop_open {id}`, `workshop_new {title?}`, `workshop_leave`, `workshop_param {id, name, value}` (at most 12 per second per
+parameter), `workshop_undo {id}`, `workshop_redo {id}`, `workshop_snapshot {req, id, jpeg_b64}` (<= 800 kB decoded, or `{req, id, error}` with
+`hidden`, `too_large` or `failed`). Handled from the server: `workshop` with `op` `enter` (`id`, `title`, `camera`, `home`, `params`, `sources`, `notes`),
+`params` (`id`, `params`, `notes`) and `leave` (`id`, `camera`); `workshop_snapshot_request {req, id, width?}`. See docs/desk.md "Workshop".
+The server tool `workshop_look(question?)` sends `workshop_snapshot_request` (fresh random `req`, `width` 200..1600), waits up to 8 s for the
+matching `workshop_snapshot` (same `req` and workshop `id`; bad base64, not a JPEG, > 800 kB, a foreign id, an unknown or repeated `req` are
+dropped or fail the request with a readable error, at most 4 requests wait at once) and sends the JPEG to the vision model; it returns
+`{ok, critique, parts, image_id?}` (the snapshot is also stored as an upload image). No answer gives `the browser did not answer (the tab may be in the background)`.
+
+#### Workshop sources
+A workshop record keeps `sources` (at most 12 deck ids). The `enter` message carries `sources:[{entity_id, title, kind}]`; after it the server
+stands each source as an ordinary entity tile on a circle around the table (radius table + 1.2, centred on the workshop origin, idempotent).
+Model tool `workshop_sources(add?: string[], remove?: string[])` returns `{ok, sources:[{deck_id, entity_id, title, kind, summary}], notes}`
+(summary = stored text, at most 600 characters); removing a source deletes its tile. Items that left the deck (`deck_forget`) are dropped
+silently on the next enter or tool call and named in `notes`.
 
 ## Conversation
 
@@ -146,7 +166,9 @@ Server -> browser: `{t:'models', catalog:[...], pinned:{agent_model, chat_model}
 `{t:'set_model', role:'agent'|'chat', model}`; the model must belong to that role, otherwise the server answers
 `error` (unknown role, unknown model, or "not available for role"). The UI shows only entries whose `roles`
 include the dropdown's role, grouped, with T/V/R badges and a tooltip for the capabilities. Without an agent pin the
-default is `FRIDAY_AGENT_MODEL`, then `gemini-flash-latest`.
+default is `FRIDAY_AGENT_MODEL`, then the newest `gemini-3*-flash` in the live catalog (stable before preview, picked
+by version number at runtime, `app/agent/agent_model.py`; `gemini-3.8-flash` until the catalog is loaded). A pin whose
+model vanished from its provider's catalog falls back to that default and the server sends a `notice`.
 
 ## Approval of risky tools
 
@@ -174,15 +196,17 @@ The voice model is fixed (Gemini Live). Two other roles are user-selectable and 
   the reply streams as `chat_delta` events sharing one `id`, history is kept per connection.
 
 Catalog (`app/agent/catalog.py`, cached 10 minutes, a failing provider is skipped and retried):
-Gemini API text models (`generateContent`, TTS/image/audio/agent models dropped), provider `gemini`, group `google`;
+Gemini API text models (`generateContent`, TTS/image/audio/agent models dropped; only generation >=
+`MIN_GEMINI_GENERATION = 3` in `catalog_gemini.py`, so 2.x, 1.5 and the `*-latest` aliases are not offered;
+`gemini-4-neon` is labelled "(high thinking only)"), provider `gemini`, group `google`;
 plus LiteLLM chat models (`GET {LITELLM_BASE_URL}/models`, ids containing `embed`, `rerank`, `stability` or
 `nova-2-multimodal` dropped), provider `litellm`, group = vendor prefix of the id (`anthropic`, `openai`, ...) and
 label `name (region)`. `set_model` with an id missing from the catalog answers `error`. Without a pin the defaults are
-`FRIDAY_AGENT_MODEL` / `FRIDAY_CHAT_MODEL`, then `gemini-flash-latest`.
+`FRIDAY_AGENT_MODEL` (then the dynamic default above) / `FRIDAY_CHAT_MODEL` (then the Live default).
 
 ### Thinking level
 
-One setting for every model: `thinking` in `prefs.json` (`minimal` | `low` | `medium` | `high`, default `high`,
+One setting for every model: `thinking` in `prefs.json` (`minimal` | `low` | `medium` | `high` | `max`, default `high`,
 fallback env `FRIDAY_THINKING`), read on every request. `models` carries `thinking` (current) and `thinking_levels`;
 `{t:'set_thinking', level}` validates (unknown level answers `error`), persists, echoes `models` and, during a voice
 session, sends the `notice` "applies to the next voice session". Mapping (`app/agent/thinking.py`):
@@ -194,8 +218,18 @@ session, sends the `notice` "applies to the next voice session". Mapping (`app/a
 - Gemini agent (`generateContent`): `thinking_level` for 3.x models; `gemini-2.5-*` accept only `thinking_budget`
   (high -1 dynamic, medium 8192, low 1024, minimal 0, or 128 for lite). `gemini-3.1-pro-preview`, `gemini-3.8-flash`, `gemini-flash-latest`
   and `gemini-4-neon` reject MINIMAL. A rejection is learned per model at runtime and the request is retried once.
-- LiteLLM: `reasoning_effort` (`minimal` -> `low`), only for models whose catalog `caps.reasoning` is true; a 400 on a
-  request carrying it is retried once without it and remembered per model.
+- `max` is the strongest reasoning each model has. Live voice and Live text clamp it to `high`; Gemini agent models
+  have nothing above HIGH (`thinking_level=HIGH`; the 2.5 budget path is -1 dynamic). `gemini-4-neon` accepts HIGH only.
+  The UI hint says "Maximum pro agentni modely (hlasovy model max. vysoke)".
+- LiteLLM (`thinking_litellm.py`): `reasoning_effort` (`minimal` -> `low`), only for models whose catalog `caps.reasoning`
+  is true. `max` sends the model's strongest effort: `caps.max_effort` (`max` or `xhigh`, from `/model/info`
+  `supports_max_reasoning_effort` / `supports_xhigh_reasoning_effort` / `reasoning_effort_levels`; such entries get
+  the label suffix "(max thinking)"), else `high`. A 400 that lists the allowed values ("must be one of ...") sets the
+  model's learned ceiling to the highest listed value and the call is retried; a 400 without a list steps max ->
+  xhigh -> high, then drops `reasoning_effort` and remembers that. Probed on the real proxy: Claude, GPT, Kimi,
+  Qwen and Grok ids accept low..xhigh and max, and a `thinking: {type:'enabled', budget_tokens}` passthrough as well;
+  DeepSeek rejects xhigh/max (400, no list). No `thinking` budget is sent: every Claude id that advertises
+  adaptive thinking also advertises max effort.
 - A first Live connect failure ends with an `error` ("voice model X did not accept the connection: ...") and `state: idle`.
 
 ### Language and voice
@@ -274,6 +308,7 @@ Ops:
 
 Common Obj props: `id`, `kind`, `pos [x,y,z]`, `rot [rx,ry,rz]` (radians), `scale` (number or `[x,y,z]`), `color` (CSS colour),
 `label`, `parent` (id of a `group` or any object; transform is relative to it), `opacity`, `visible` (false hides the object and its children),
+`ref` `{type: image|file|model|memory|tool, id}` (which stored item the object stands for; id up to 80 chars of letters, digits and `_ . : -`; shown by `scene_get`),
 `anim`: `{type: spin|bob|pulse|orbit, speed?, axis?: x|y|z, amp?}` or a list of those.
 `spin` rotates around `axis` (default y), `bob` oscillates along `axis` by `amp` (0.25), `pulse` scales by `amp` (0.12),
 `orbit` circles in the plane normal to `axis` with radius `amp` (1).
@@ -293,7 +328,10 @@ Common Obj props: `id`, `kind`, `pos [x,y,z]`, `rot [rx,ry,rz]` (radians), `scal
 | `chart3d` | `values`, `labels`, `gap`, `height` (tallest bar, 3), `color2`, `show_values` |
 | `surface` | `data` (2D array) or `fn` (expression of `x`,`z`, e.g. `sin(x)*cos(z)`), `res`, `range [min,max]`, `size [w,d]`, `height`, `color2` |
 | `gltf` | `url`, `fit` (largest dimension, 2) |
+| `entity` | `shape` (`image doc book table code audio archive tool model note`), `title`, `subtitle?`, `thumb?` (url, keeps its aspect), `accent?` (frame colour); holographic tile with a link port. Double-click sends `entity_open` when `ref` is set; context menu: open, link, remove from the deck |
+| `link` | `from`, `to` (object ids), `label?`, `style?` (`solid\|dashed`), `color?`; glowing curve with flowing particles that follows both endpoints every frame and hides when one is missing |
 | `extrude` | `walls [[x1,y1,x2,y2],...]`, `thickness` (0.2), `height` (2.5), or `outline [[x,y],...]` polygon; `floor` (true). Plan x,y maps to world x,z |
+| `lathe` | `profile [[r,y],...]` (2..64 points, `r >= 0`, finite, below 1e4) turned around the y axis (vases, bottles, bowls, wheels), `segments` (3..96, 32), `cap` (true: both ends are closed against the axis) |
 
 Selection: clicking an object in the 3D view sends `{t:"select", ids}` (shift-click toggles, clicking the sole selected
 object again selects its parent, empty space clears). The backend keeps `scene.selected` and `scene.describe()` returns a
@@ -303,6 +341,29 @@ Demo: with `FRIDAY_DEMO=1`, the browser may send `{t:"demo", what:"scene"}`; the
 every kind, then a `camera` op. Open the UI with `?noorb` to hide the orb (headless tests).
 
 Anything beyond these kinds goes through code mode (sandboxed iframe, step 6).
+
+Entities: `show_in_scene`, `file_to_scene` and the `image_to_scene` message add an `entity` object `ent-<kind>-<id8>` with a `ref`,
+placed by a deterministic auto-layout (`app/entities/layout.py`: next free slot on an arc in front of the camera, spacing >= 3.5).
+Dropping a file no longer opens the 2D card; double-click it. The client selects the new entity, glides to it and shows a toast; see docs/desk.md for the action bar, the Deck window and the browser messages `deck_list`, `deck_open`, `deck_place {id, pos?}`, `deck_pin`, `deck_tag`, `deck_forget` and the server messages `deck`, `deck_changed`. Tools: `entity_link(from_id,to_id,label?,style?)`, `entity_unlink(link_id)`,
+`entity_list()`, `entity_open(id)`, `entity_arrange(layout: arc|grid|around, center_id?)` (tweened `set` ops) and
+`entity_run(tool_entity_id)`: runs the tool of a `ref.type: "tool"` entity on the file/image entities linked to it through the normal
+tool path (risky tools ask for approval); only tools with a `ref` parameter (`read_file`, `summarize_file`, `analyze_image`) accept this.
+
+## Workshop part tree
+
+`backend/app/workshop` turns a data-only spec (no code from the model) into model3d parts. `expand(spec)` returns
+`Expanded(parts, params, notes)`; `parts` are dicts accepted by `Part.from_dict` (kind props in `geom`, rotation in radians,
+`props.source` = the spec part id), `params` is `[{name,label,value,min,max,step,unit}]`, `notes` lists clamped values and
+approximations. `with_params(spec, values)` returns a new spec with values clamped to each parameter's range. Every
+`SpecError` message names the field path (`parts[3].size[1]: unknown parameter 'wdth'; did you mean 'width'?`).
+
+Spec: `{name, units: mm|cm|m, params: {name: number | {value,min,max,step,label,unit}}, parts: [...]}`. Kinds: `box`, `sphere`,
+`cylinder` (`r` or `r1`+`r2`; a zero radius gives a cone), `capsule`, `torus`, `plane`, `extrude`, `lathe` (`profile [[r,y],...]`, `segments` 24), `polyline`, `label`, `group`.
+Common keys: `id`, `kind`, `name`, `pos`, `rot` (degrees), `color`, `material {metal,rough,opacity}`, `parent` (a group), `tags`
+(first tag is the layer), `mirror` (`x|y|z`, copy `<id>.m`) and `array` (`linear {count,step}` or `radial {count,axis,radius,
+start_deg}`, members `<id>.<i>`). Numbers may be `"=expression"` strings (hand-written evaluator, 160 characters, depth 12,
+200 nodes). Caps: 2000 parts after expansion, 40 parameters, group depth 6, array count 200; exceeding one is a `SpecError`.
+The LLM-facing description is `app.workshop.doc.SPEC_DOC`.
 
 ## View panels
 
@@ -321,6 +382,8 @@ which rejects unknown kinds and payloads over 2 MB. Model text is never inserted
 | `map` | `{center: [lat, lon], zoom?: 0-18, markers?: [{lat, lon, label?}]}` - 3x3 OpenStreetMap tile grid |
 | `json` | `{value}` - collapsible tree |
 | `memory_graph` | `{nodes: [{id, label, kind: project\|session\|memory\|concept\|file, weight 0-1, ts (ms epoch, 0 = none), project}], links: [{source, target, kind, weight}]}` - memory orbs (3d-force-graph); at most ~300 nodes, every link endpoint is a node id; link kinds: `in` (session/memory to project), `seen_in` (concept/file to session), `tagged` (memory to concept), plus agentmemory edge types (`uses`, `modifies`, `related_to`, ...) Optional keys of a query-focused graph (`memory_search`, `show_memory_graph` with `query`): `query` (string), `highlight` (node ids, most relevant first: the orbs to light up; the rest of `nodes` is 1-hop context, at most 120 nodes, hits first), `hits` (top 12 `{id, label, kind, score, snippet <= 160 chars, ts, project}`) and `summary` (<= 400 chars of plain text built from the top hits, no model call; "Nic nenalezeno k dotazu ..." with empty `nodes`/`highlight` when nothing matches). Node ids are the same as in the generic graph. Labels/snippets are untrusted memory text: control characters stripped, render as text only. |
+
+Client behaviour for a query-focused `memory_graph` (frontend `views/memory_view.ts`, `memory_hits*.ts`): the panel is updated in place when a second `memory_graph` view arrives (`ViewHost.show` folds a view of the same kind into the open panel when its renderer returned an `update` function; no second window, `view_close` of either id closes it). Enter in the toolbar search box or the magnifier button sends `memory_search` and shows "Hledam v pameti..." until that view arrives (30 s timeout). `highlight` ids that are not nodes of `nodes` are ignored; the highlighted orbs get the emphasis ring and full opacity, all others recede to 0.35, the camera flies to `highlight[0]` and fits the highlighted subset once. `hits` (at most 12, best score first) are listed in a collapsible panel under the `summary` and a query chip with the hit count; a row click or Enter selects the node and opens its card. The same state is shown when the model calls `show_memory_graph(query)` without a prior browser message (search box pre-filled with `query`). "Zrusit hledani" / Esc restores the last generic dataset client-side (no server rebuild; if the panel was opened by a query, `show_memory_graph` is sent). Nothing is persisted.
 | `file_card` | see "Files" - tile for a dropped document (summary, outline, tables, excerpt, download link, buttons) |
 | `image_card` | `{url, summary, kind, people_count, objects: [{label, count}], text_found: string[], exif: {camera_make?, camera_model?, taken_at?, orientation?, lat?, lon?}, notes, scene?, location_hint?, rooms?: [{name, dimensions}], dimensions_hint?, confidence?}` - visual overview of an uploaded image; `kind` is `photo\|floorplan\|screenshot\|drawing\|document\|other`, `people_count` may be null |
 
@@ -346,6 +409,36 @@ Analysis uses the pinned `agent` model when it supports vision (Gemini models, L
 `/model/info` says `supports_vision`), else `gemini-flash-latest`, through `agent.llm.chat` with OpenAI-style image
 parts (`{type:'image_url', image_url:{url:'data:...'}}`; Gemini receives inline_data). The model must answer one strict
 JSON object; an invalid reply is retried once, then the analysis fails with an error. Image content is untrusted data.
+
+## Photo editing and house from sources
+
+Package `backend/app/imaging/`. Tools (all registered per connection by `register_imaging_tools`):
+
+- `image_edit {image_ids (1-6), instruction, operation?, full_res?}` (long, WHEN_IDLE): sends the stored photos (the 1600 px
+  analysis copies unless `full_res`) plus an English prompt template (`merge_people`, `enhance`, `remove_background`,
+  `outpaint`, `custom`; the user text is appended) to a Gemini image model via `generate_content` with
+  `response_modalities ['IMAGE','TEXT']`. The model is `gemini-3.1-flash-image`, falling back to `gemini-2.5-flash-image`
+  when the first errors or is not in the live list; the working one is cached; `FRIDAY_IMAGE_MODEL` (a Gemini image id) pins it.
+  Images are never sent to any other model. The result (re-encoded, EXIF-free, <= 12 MB) is stored as a NEW upload with
+  `derived: {derived_from: [ids], instruction, operation, model}` in its metadata and announced as
+  `image_ready {..., derived}`; the originals are untouched. Empty instruction, more than 6 inputs, unknown ids and a
+  `merge_people` with one image are refused; timeout 90 s; a blocked or text-only answer returns a readable `{error}`.
+  The result is AI-generated and may not preserve faces exactly.
+- `image_compare {a_id, b_id}`: two `image` views (`compare-before`, `compare-after`).
+- `house_from_sources {file_ids?, image_ids?, notes?}` (long): up to 3 PDFs (files store, sent natively as
+  `application/pdf`) and 8 images go into ONE Gemini analysis (pinned agent model when it is a Gemini model, else
+  `gemini-flash-latest`) that must answer a strict JSON object (storeys, rooms with metre sizes, confidence and
+  `dimension_candidates`, relative position, doors/windows per wall, exterior facts, interior facts, scale hints, conflicts,
+  open questions); an invalid reply is retried once. `imaging/spec_merge.py` maps it onto the `building` pack: the most
+  confident dimension wins and disagreements are reported, rooms are placed next to the room they name (else beside the
+  others, with a question), doors and windows that do not fit a wall are dropped one by one and listed, a window grid fills
+  the front facade, missing sizes become 3.5 x 4 m with a question (or the outside footprint when no size is stated at
+  all), more floors outside than on the plans repeat the ground layout. It replaces the model `house` through
+  `pack_generate` and frames the camera. Returns `{ok, model_id, summary, open_questions[], conflicts[], sources, parts}`.
+- `house_refine {image_ids, notes?}` (long): reads a later inside photo against the rooms of `house` and stages a
+  `model_propose` proposal (floor colour, missing furniture; stable ids, nothing regenerated); the user accepts or rejects.
+
+The `building` pack spec gained an optional `wall_color` (`#rrggbb`).
 
 ## Files
 
@@ -375,6 +468,35 @@ untrusted data: tools wrap it in `<file-content>` and say so.
 Model tools: `read_file(file_id, part?)` (20 kB per part), `list_files()`, `file_to_scene(file_id)` (emits the
 `file_card` tile), `summarize_file(file_id)` (agent model, first ~30 kB, <= 600 chars). Run uvicorn with a
 `--ws-max-size` of at least 36 MB (a 25 MB file is ~34 MB of base64).
+
+## Web pages on the deck
+
+A web page can be kept as a deck item and a desk entity (`backend/app/webpages/`). The browser sends `{t:'web_add', url}`
+(the Deck top bar has a small "Pridat odkaz" input; Enter sends it); failures come back as `{t:'error', message}`. The model has
+`web_add(url, place=true)` (long, WHEN_IDLE), `web_refresh(deck_id)` (long), `web_read(deck_id, part?)` (20 kB parts, text wrapped in
+`<web-content>` with an `untrusted` note) and `web_compare(ids[2..6])` (stored texts trimmed to a 24 kB budget, `cut` flag, no
+model call). Drag-and-drop of URLs and automatic fetching of links pasted into the chat are NOT implemented.
+
+The server fetches on behalf of the user, so every fetch is guarded (SSRF): only http/https, ports 80/443 (8080/8443 when listed in
+`FRIDAY_WEB_PORTS`), no user name or password, URLs up to 2048 characters, no decimal/octal/hex IP spellings, no `localhost`,
+`.local`, `.internal` names. The name is resolved once, EVERY answer must be a public address (loopback, private, link-local,
+carrier-grade NAT, multicast, reserved, and IPv6 forms that embed an IPv4 address are refused) and the socket is connected to that
+checked address (the name is kept for TLS and the Host header), then the connected peer is checked again (DNS rebinding). Redirects
+are followed by hand (at most 5) and every hop goes through the same checks. Limits: 10 s connect, 20 s total, 5 MB body (aborted
+while streaming), no compression, types text/html, application/xhtml+xml, text/plain, application/pdf and jpeg/png/gif/webp only.
+No cookies or credentials are sent; the User-Agent is `FridayBot/<version>`. Static HTML only: no JavaScript is run.
+`FRIDAY_WEB_FETCH=0` switches the feature off; `FRIDAY_WEB_ALLOWLIST` / `FRIDAY_WEB_DENYLIST` are comma separated host patterns
+(a name matches itself and its subdomains, `*` makes a glob; the deny list wins). A PDF or an image is handed to the existing
+file or image pipeline and appears like a dropped file.
+
+HTML becomes readable text with the standard library (headings, lists, tables, up to 50 links as `[text](url)`, 200 kB cap with
+`truncated`) plus title, canonical URL, site, author, date, language and description. A snapshot is kept in
+`FRIDAY_DATA_DIR/web/<id>/{meta.json,text.txt}` where `<id>` is the hash of the normalised URL (lower-case host, default port,
+fragment and tracking parameters dropped), so the same URL again refreshes the same snapshot and raises `fetch_count`; raw HTML is
+never stored or served. The deck item has type `web` (subtitle = host, `meta {url, fetched_at, bytes, lang, fetch_count}`, full
+text search over the description and the first 4000 characters); the entity has `ref {type:'web', id}` and shape `doc`. Opening
+it emits a `file_card` view with `kind:'web'`, `source_url` (the card shows [Otevrit original], `rel=noopener noreferrer`) and
+`web_id` (the buttons [Obnovit] and [Shrnout] send chat messages). A page text is untrusted data.
 
 ## Model tools
 

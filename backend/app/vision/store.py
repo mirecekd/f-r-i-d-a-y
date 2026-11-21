@@ -9,6 +9,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from app.deck import hooks as deck_hooks
 from app.vision.images import EXT_BY_MIME, Inspected
 
 ID_RE = re.compile(r"^[0-9a-f]{32}$")
@@ -26,6 +27,12 @@ def safe_name(name: object) -> str:
 
 def url_of(meta: dict[str, Any]) -> str:
     return f"/api/uploads/{meta['id']}.{meta['ext']}"
+
+
+def entity_args(meta: dict[str, Any]) -> dict[str, Any]:
+    """add_entity arguments of a stored image (shared by show_in_scene, upload auto-placement and deck_place)."""
+    return {"ref_type": "image", "ref_id": meta["id"], "shape": "image", "title": meta["name"],
+            "subtitle": f"{meta['w']}x{meta['h']}", "thumb": url_of(meta)}
 
 
 def save(raw: bytes, name: object, insp: Inspected) -> dict[str, Any]:
@@ -48,6 +55,7 @@ def write_meta(meta: dict[str, Any]) -> None:
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(meta, ensure_ascii=False))
     tmp.replace(path)
+    deck_hooks.image_saved(meta)
 
 
 def load_meta(image_id: str) -> dict[str, Any] | None:

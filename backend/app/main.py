@@ -13,6 +13,8 @@ from fastapi.staticfiles import StaticFiles
 from app import __version__
 from app.agent_wiring import AgentSession
 from app.conversation import new_conversation
+from app.entities.messages import KINDS as ENTITY_MESSAGES
+from app.entities.messages import handle_entity_message
 from app.files import router as files_router
 from app.mcp import api_router as mcp_router
 from app.memory.handlers import memory_search, show_memory_graph
@@ -23,6 +25,8 @@ from app.stop import StopController
 from app.views_demo import sample_views
 from app.vision import router as vision_router
 from app.voice import ToolRegistry, VoiceBridge
+from app.workshop.messages import KINDS as WORKSHOP_MESSAGES
+from app.workshop.messages import handle_workshop_message
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 log = logging.getLogger("friday")
@@ -100,6 +104,8 @@ async def handle(ws: WebSocket, msg: dict, voice: VoiceBridge, agent: AgentSessi
         await agent.files.on_upload(msg, voice.send_context if voice.active else None)
     elif kind == "image_to_scene":
         await agent.vision.on_image_to_scene(msg)
+    elif kind in ENTITY_MESSAGES:
+        await handle_entity_message(ws.send_json, agent, msg)
     elif kind == "set_model":
         await agent.set_model(msg, voice.active)
     elif kind == "set_language":
@@ -115,6 +121,12 @@ async def handle(ws: WebSocket, msg: dict, voice: VoiceBridge, agent: AgentSessi
         await show_memory_graph(ws.send_json, msg)
     elif kind == "memory_search":
         await memory_search(ws.send_json, msg)
+    elif isinstance(kind, str) and kind.startswith("deck_"):
+        await agent.deck.handle(msg)
+    elif kind in WORKSHOP_MESSAGES:
+        await handle_workshop_message(agent.workshop, msg)
+    elif kind == "web_add":
+        await agent.web.on_message(msg)
     elif kind == "select":
         scene.select(msg.get("ids", []))
     elif kind == "demo" and os.getenv("FRIDAY_DEMO") == "1" and msg.get("what") == "scene":
@@ -127,6 +139,9 @@ async def handle(ws: WebSocket, msg: dict, voice: VoiceBridge, agent: AgentSessi
 
 if STATIC.is_dir():
     app.mount("/assets", StaticFiles(directory=STATIC / "assets"), name="assets")
+    # Hand-gesture model (downloaded by scripts/fetch-gesture-model.sh, not part of the repo): served only when present.
+    if (STATIC / "models").is_dir():
+        app.mount("/models", StaticFiles(directory=STATIC / "models"), name="models")
 
     @app.get("/")
     async def index():

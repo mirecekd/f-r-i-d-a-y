@@ -44,7 +44,7 @@ def next_of(ws, kind):
 def test_models_message_and_set_thinking(client):
     with client.websocket_connect("/ws") as ws:
         first = next_of(ws, "models")
-        assert first["thinking"] == "high" and first["thinking_levels"] == ["minimal", "low", "medium", "high"]
+        assert first["thinking"] == "high" and first["thinking_levels"] == ["minimal", "low", "medium", "high", "max"]
         ws.send_json({"t": "set_thinking", "level": "low"})
         assert next_of(ws, "models")["thinking"] == "low"
         ws.send_json({"t": "set_thinking", "level": "extreme"})

@@ -1,0 +1,20 @@
+{
+  "name": "Desk fan",
+  "units": "mm",
+  "params": {
+    "blades": {"value": 5, "min": 3, "max": 9, "step": 1, "label": "Blades"},
+    "blade_len": {"value": 90, "min": 50, "max": 140, "label": "Blade length", "unit": "mm"},
+    "tilt": {"value": 15, "min": 0, "max": 45, "label": "Blade pitch", "unit": "deg"}
+  },
+  "parts": [
+    {"id": "base", "kind": "cylinder", "r": 90, "h": 20, "pos": [0, 10, 0], "color": "#303840", "tags": ["stand"]},
+    {"id": "neck", "kind": "cylinder", "r": 12, "h": 220, "pos": [0, 130, 0], "color": "#505860", "tags": ["stand"]},
+    {"id": "motor", "kind": "cylinder", "r": 45, "h": 90, "pos": [0, 275, 0], "rot": [90, 0, 0], "color": "#303840", "tags": ["head"]},
+    {"id": "hub", "kind": "sphere", "r": 25, "pos": [0, 275, 55], "color": "#a0a8b0", "material": {"metal": 0.8, "rough": 0.3}, "tags": ["rotor"]},
+    {"id": "rotor", "kind": "group", "pos": [0, 275, 60], "tags": ["rotor"]},
+    {"id": "blade", "kind": "box", "size": ["=blade_len", 6, 34], "parent": "rotor", "pos": ["=blade_len/2+20", 0, 0], "rot": ["=tilt", 0, 0], "color": "#7fd0ff",
+     "material": {"opacity": 0.7}, "tags": ["rotor"], "array": {"type": "radial", "count": "=blades", "axis": "z"}},
+    {"id": "cage", "kind": "torus", "r": 130, "tube": 39, "pos": [0, 275, 60], "rot": [90, 0, 0], "color": "#c0c8d0", "tags": ["guard"]},
+    {"id": "cage_ring", "kind": "torus", "r": 80, "tube": 24, "pos": [0, 275, 60], "rot": [90, 0, 0], "color": "#c0c8d0", "tags": ["guard"]}
+  ]
+}

@@ -6,6 +6,7 @@ import os
 import re
 from pathlib import Path
 
+from app.deck import hooks as deck_hooks
 from app.model3d.model import ID_RE, Model, ModelError
 
 MAX_HISTORY = 50
@@ -70,6 +71,7 @@ class ModelStore:
     def save(self, model: Model) -> None:
         model.validate()
         _write_atomic(self._path(model.id), model.to_dict())
+        deck_hooks.model_saved(model)
 
     def commit(self, before: Model, after: Model) -> None:
         """Persist `after`; `before` becomes the next undo state and the redo stack is dropped."""
@@ -121,5 +123,6 @@ class ModelStore:
     def delete(self, model_id: str) -> None:
         model_id = norm_id(model_id)
         self._path(model_id).unlink(missing_ok=True)
+        deck_hooks.model_removed(model_id)
         for d in (self._undo, self._redo, self._named):
             d.pop(model_id, None)

@@ -8,8 +8,9 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from app.entities.make import add_entity
 from app.files import store
-from app.files.card import card_data, ready_payload
+from app.files.card import card_data, entity_args, ready_payload
 from app.files.common import MAX_BYTES, ExtractError
 from app.files.extract import extract
 from app.files.kinds import detect
@@ -68,9 +69,13 @@ class FileService:
         except (ExtractError, ImageRejected) as e:
             return await self.ctx.emit({"t": "error", "message": f"file_upload: {e}", **extra})
         await self.ctx.emit({"t": "file_ready", **ready_payload(meta), **({"client_id": client_id} if client_id else {})})
-        await self.show_card(meta)
+        await self.show_entity(meta)  # the file lands on the desk first; its card opens with entity_open
         if voice_hint:
             await voice_hint(attach_hint(meta))
+
+    async def show_entity(self, meta: dict[str, Any], pos: Any = None) -> dict[str, Any]:
+        """Add the stored file to the scene as an `entity` tile; returns {ok, object_id, pos} or {error}."""
+        return await add_entity(self.ctx.scene, self.ctx.emit, **entity_args(meta), pos=pos)
 
     async def show_card(self, meta: dict[str, Any]) -> dict[str, Any]:
         """Emit the file_card view for a stored file; returns {ok, view_id} or {error}."""

@@ -83,8 +83,16 @@ class CatalogCache:
                     return e["provider"]
         return None
 
+    def entries_for(self, provider: str) -> list[Entry]:
+        """Cached entries of `provider`; empty when it was never fetched or failed."""
+        return [e for _, es in self._entries.values() for e in es if e["provider"] == provider]
+
     def has_role(self, model_id: str, role: str) -> bool:
         return any(e["id"] == model_id and role in e["roles"] for _, es in self._entries.values() for e in es)
+
+    def max_effort(self, model_id: str) -> str | None:
+        """The strongest reasoning_effort above `high` that /model/info advertised for `model_id`."""
+        return next((e.get("caps", {}).get("max_effort") for _, es in self._entries.values() for e in es if e["id"] == model_id), None)
 
     def has_cap(self, model_id: str, cap: str) -> bool:
         return any(

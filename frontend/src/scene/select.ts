@@ -25,7 +25,17 @@ export class Selection {
   onFrame: (id: string | undefined) => void = () => {};
   onMenu: (id: string, x: number, y: number) => void = () => {};
 
+  private camera: THREE.Camera | null = null;
+
+  /** Object under a normalised screen point (0..1, y down), or undefined. Used by hand gestures. */
+  pickAt(nx: number, ny: number): string | undefined {
+    if (!this.camera) return undefined;
+    this.ray.setFromCamera(new THREE.Vector2(nx * 2 - 1, -(ny * 2 - 1)), this.camera);
+    return this.hitId();
+  }
+
   attach(canvas: HTMLElement, camera: THREE.Camera): void {
+    this.camera = camera;
     const pick = (x: number, y: number): string | undefined => {
       const r = canvas.getBoundingClientRect();
       this.ray.setFromCamera(new THREE.Vector2(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1), camera);

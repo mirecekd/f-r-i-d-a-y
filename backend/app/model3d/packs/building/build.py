@@ -27,7 +27,7 @@ def building_from_spec(spec: dict[str, Any]) -> list[dict[str, Any]]:
     s = normalize(spec)
     parts: list[dict[str, Any]] = []
     for si, st in enumerate(s["storeys"]):
-        parts += _storey(st, si)
+        parts += _storey(st, si, s["wall_color"])
     if s["roof"]:
         top = max(st["elevation"] + st["height"] for st in s["storeys"])
         pts = [p for st in s["storeys"] for r in st["rooms"] for p in r["polygon"]]
@@ -55,7 +55,7 @@ def layer_defs(parts: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return out
 
 
-def _storey(st: dict[str, Any], si: int) -> list[dict[str, Any]]:
+def _storey(st: dict[str, Any], si: int, wall_color: str | None = None) -> list[dict[str, Any]]:
     sid = st["id"]
     walls = wall_list(st)
     holes = resolve(st, walls)
@@ -75,7 +75,8 @@ def _storey(st: dict[str, Any], si: int) -> list[dict[str, Any]]:
         out.append(text(f"{sid}-label-{r['id']}", r["name"], [(x0 + x1) / 2, 0.15, (y0 + y1) / 2], layer_name(sid, "labels"), gid)
                    | {"props": {**base, "kind": "labels", "room": r["id"]}})
     for w in walls:
-        out += wall_parts(w, holes[w["id"]], f"{sid}-wall-{w['id']}", gid, layer_name(sid, "walls"), {**base, "kind": "walls"})
+        out += wall_parts(w, holes[w["id"]], f"{sid}-wall-{w['id']}", gid, layer_name(sid, "walls"), {**base, "kind": "walls"},
+                           *([wall_color] if wall_color else []))
         for o in holes[w["id"]]:
             out += opening_parts(w, o, f"{sid}-{o['kind']}-{o['id']}", gid, layer_name(sid, "openings"), {**base, "kind": "openings"})
     for i, f in enumerate(st["furniture"]):

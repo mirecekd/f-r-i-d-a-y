@@ -70,6 +70,14 @@ export const renderFileCard: Renderer = (body, data) => {
   }
 
   const bar = el("div", "fc-actions");
+  const source = safeUrl(data?.source_url);
+  if (source) {
+    const o = el("a", "fc-btn", "Otevrit original");
+    o.href = source;
+    o.target = "_blank";
+    o.rel = "noopener noreferrer";
+    bar.append(o);
+  }
   const href = safeUrl(data?.download_url);
   if (href) {
     const a = el("a", "fc-btn", "Stahnout");
@@ -77,10 +85,15 @@ export const renderFileCard: Renderer = (body, data) => {
     a.setAttribute("download", name);
     bar.append(a);
   }
+  if (data?.web_id) {
+    const refresh = el("button", "fc-btn", "Obnovit");
+    refresh.onclick = () => fileCardActions.chat(`Obnov stranku ${String(data.web_id)}`);
+    bar.append(refresh);
+  }
   const more = el("button", "fc-btn", "Precist dal");
-  more.onclick = () => fileCardActions.chat(`Precti dalsi cast souboru ${name}`);
+  more.onclick = () => fileCardActions.chat(data?.web_id ? `Precti dalsi cast stranky ${String(data.web_id)}` : `Precti dalsi cast souboru ${name}`);
   const sum = el("button", "fc-btn", "Shrnout");
-  sum.onclick = () => fileCardActions.chat(`Shrn soubor ${name}`);
+  sum.onclick = () => fileCardActions.chat(data?.web_id ? `Shrn stranku ${String(data.web_id)}` : `Shrn soubor ${name}`);
   bar.append(more, sum);
   card.append(bar);
   body.append(card);

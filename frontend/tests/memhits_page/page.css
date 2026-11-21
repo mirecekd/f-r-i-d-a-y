@@ -1,0 +1,5 @@
+/* frontend/tests/memhits_page/page.css */
+:root { --c: #4fd8ff; --dim: #2a6a80; }
+body { margin: 0; background: #02060c; color: #cfefff; font: 14px system-ui, sans-serif; }
+#host { position: fixed; inset: 0; }
+button { color: inherit; background: rgba(4,18,30,.7); border: 1px solid var(--dim); border-radius: 8px; font: inherit; }

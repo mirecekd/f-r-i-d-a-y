@@ -12,6 +12,8 @@ export interface LabelCtx {
   hover: MemNode | null;
   selected: MemNode | null;
   matches(n: MemNode): boolean;
+  /** Search results always carry a label. */
+  pinned?(n: MemNode): boolean;
   level(n: MemNode): number;
 }
 
@@ -22,7 +24,7 @@ export function syncLabels(c: LabelCtx): void {
     if (!p) continue;
     const near = n.x !== undefined && c.matches(n) && Math.hypot(n.x - c.camera.x, n.y - c.camera.y, n.z - c.camera.z) < NEAR;
     const want =
-      n === c.hover || n === c.selected || (c.mode === "always" && c.matches(n)) || (c.mode === "auto" && (alwaysLabel(n) || near));
+      n === c.hover || n === c.selected || !!c.pinned?.(n) || (c.mode === "always" && c.matches(n)) || (c.mode === "auto" && (alwaysLabel(n) || near));
     if (want && !p.label) { p.label = labelSprite(n.label, KIND_COLOR[n.kind as Kind], p.radius); n.__threeObj.add(p.label); setOrbLevel(p, c.level(n)); }
     else if (!want && p.label) disposeLabel(p);
   }

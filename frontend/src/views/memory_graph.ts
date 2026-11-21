@@ -1,19 +1,33 @@
 // frontend/src/views/memory_graph.ts
-import { params } from "../core/params";
 import { buildOrb, partsOf, setOrbEmphasis, setOrbLevel, type MemNode } from "./memory_orbs";
 import { adjacency, cleanGraph } from "./memory_data";
 import { createHoverGate } from "./memory_hover";
 import { createFilters } from "./memory_filter_ctl";
 import { alwaysLabel, syncLabels } from "./memory_labels";
+import { createSearchView } from "./memory_search_ctl";
+import { createScene } from "./memory_scene";
+import { parseSearch } from "./memory_hits_logic";
 import { buildMemoryUi } from "./memory_ui";
-import type { Renderer } from "./types";
 
 const HEAVY = 400; // above this many nodes: no labels, no particles
 
 const idOf = (e: string | MemNode): string => (typeof e === "string" ? e : e.id);
 
-/** data: `{nodes, links}` (see docs/protocol.md). 3d-force-graph is lazy-loaded; panel or full-screen "immersive" mode. */
-export const renderMemoryGraph: Renderer = async (body, data) => {
+export interface SearchIo {
+  submit(query: string): void;
+  cancel(): boolean;
+}
+
+export interface GraphHandle {
+  dispose(): void;
+  setBusy(query: string | null): void;
+  isFull(): boolean;
+  setFull(on: boolean): void;
+  searching: boolean;
+}
+
+/** data: `{nodes, links}` plus optional query/highlight/hits/summary (see docs/protocol.md); panel or full-screen "immersive" mode. */
+export async function mountMemoryGraph(body: HTMLElement, data: any, io: SearchIo): Promise<GraphHandle> {
   const { nodes, links } = cleanGraph(data);
   const heavy = nodes.length > HEAVY;
   let query = "";
@@ -28,6 +42,8 @@ export const renderMemoryGraph: Renderer = async (body, data) => {
 
   const ui = buildMemoryUi({
     search: (q) => { query = q; refresh(); },
+    submit: io.submit,
+    cancel: io.cancel,
     deselect: () => select(null),
     toggleFilters: () => filters.toggle(),
     toggleFull: () => setFull(!root.classList.contains("mg-full")),
@@ -36,27 +52,19 @@ export const renderMemoryGraph: Renderer = async (body, data) => {
   });
   const root = ui.root;
   body.append(root);
-  const { default: ForceGraph3D } = await import("3d-force-graph");
-  const graph = new ForceGraph3D(ui.holder, { controlType: "orbit", rendererConfig: { alpha: true, antialias: !heavy } });
-  graph.renderer().setPixelRatio(Math.min(devicePixelRatio, params.pixelRatio, 1.5));
-  const controls = graph.controls() as any;
-  controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.55;
-  controls.enableDamping = true;
-  controls.zoomSpeed = 1.4;
-  controls.minDistance = 30;
-  controls.maxDistance = 4000;
-  controls.zoomToCursor = true;
+  const { graph, controls } = await createScene(ui.holder, heavy);
+  const search = createSearchView({ state: parseSearch(data), nodes, ui, graph, select: (n) => select(n), cancel: io.cancel });
 
   const dim = (n: MemNode): number => {
     const focus = selected ?? hover;
-    return !focus || n === focus || neighbours.has(n.id) ? 1 : selected ? 0.3 : 0.55; // hover only softens, selection focuses
+    const inFocus = !focus || n === focus || neighbours.has(n.id);
+    return search.level(n, inFocus ? 1 : selected ? 0.3 : 0.55, inFocus && !!focus); // hover only softens, selection focuses
   };
-  const restyle = () => graph.graphData().nodes.forEach((n: any) => { const p = partsOf(n.__threeObj); if (p) { setOrbLevel(p, dim(n)); setOrbEmphasis(p, n === (selected ?? hover)); } });
+  const restyle = () => graph.graphData().nodes.forEach((n: any) => { const p = partsOf(n.__threeObj); if (p) { setOrbLevel(p, dim(n)); setOrbEmphasis(p, n === (selected ?? hover) || search.isResult(n)); } });
   const light = (l: any) => { const f = selected ?? hover; return !!f && (idOf(l.source) === f.id || idOf(l.target) === f.id); };
   const labels = () => {
     if (heavy) return;
-    syncLabels({ mode: filters.state().labels, nodes: graph.graphData().nodes, camera: graph.camera().position, hover, selected, matches, level: dim });
+    syncLabels({ pinned: search.isResult, mode: filters.state().labels, nodes: graph.graphData().nodes, camera: graph.camera().position, hover, selected, matches, level: dim });
   };
   const fit = () => {
     const r = ui.holder.getBoundingClientRect();
@@ -86,6 +94,7 @@ export const renderMemoryGraph: Renderer = async (body, data) => {
   function select(n: MemNode | null): void {
     selected = n;
     ui.showCard(n, n ? adj.get(n.id)!.size : 0);
+    search.setActive(n?.id ?? null);
     setFocus();
     filters.onSelect();
     if (!n || n.x === undefined) return;
@@ -114,7 +123,7 @@ export const renderMemoryGraph: Renderer = async (body, data) => {
     .linkDirectionalParticleSpeed(0.005)
     .linkDirectionalParticleColor(() => "#bff4ff")
     .d3VelocityDecay(0.3)
-    .onEngineStop(() => { if (!fitted && !touched) graph.zoomToFit(700, 30); fitted = true; }) // once; later settles never move the camera
+    .onEngineStop(() => { if (!fitted && !touched && !search.settled()) graph.zoomToFit(700, 30); fitted = true; }) // once; later settles never move the camera
     .onNodeHover(((n: MemNode | null) => { ui.tip(n?.label ?? null, px, py); gate.set(n); }) as any)
     .onNodeClick(((n: MemNode) => select(n)) as any)
     .onBackgroundClick(() => select(null));
@@ -139,7 +148,7 @@ export const renderMemoryGraph: Renderer = async (body, data) => {
   }, 400);
   const onKey = (e: KeyboardEvent) => {
     if (e.key !== "Escape") return;
-    if (!filters.closeIfOpen() && root.classList.contains("mg-full")) setFull(false);
+    if (!filters.closeIfOpen() && !io.cancel() && root.classList.contains("mg-full")) setFull(false);
   };
   addEventListener("keydown", onKey);
   const ro = new ResizeObserver(fit);
@@ -147,16 +156,22 @@ export const renderMemoryGraph: Renderer = async (body, data) => {
   filters.start();
   setFocus();
   fit();
-  (root as any).__graph = graph; // test hook: screen position of nodes
+  (root as any).__graph = graph; // test hook
 
-  return () => {
-    clearInterval(timer);
-    gate.dispose();
-    cancelAnimationFrame(restyleFrame);
-    removeEventListener("keydown", onKey);
-    filters.dispose();
-    ro.disconnect();
-    graph._destructor();
-    root.remove();
+  return {
+    searching: search.active,
+    setBusy: ui.setBusy,
+    isFull: () => root.classList.contains("mg-full"),
+    setFull,
+    dispose() {
+      clearInterval(timer);
+      gate.dispose();
+      cancelAnimationFrame(restyleFrame);
+      removeEventListener("keydown", onKey);
+      filters.dispose();
+      ro.disconnect();
+      graph._destructor();
+      root.remove();
+    },
   };
-};
+}

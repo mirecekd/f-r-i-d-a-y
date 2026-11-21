@@ -17,7 +17,7 @@ from typing import Any
 
 import httpx
 
-from app.agent import thinking
+from app.agent import thinking, thinking_litellm
 from app.agent.catalog import catalog
 
 OnDelta = Callable[[str], Awaitable[None]]
@@ -98,19 +98,23 @@ async def chat_litellm(
     body: dict[str, Any] = {"model": model, "messages": _litellm_messages(messages), "stream": True}
     if tools:
         body["tools"] = tools
-    if litellm_reasons(model):
-        body["reasoning_effort"] = thinking.reasoning_effort()
-    try:
-        return await _post_litellm(base, key, body, on_delta)
-    except _Rejected:
-        thinking.LITELLM_REJECTED.add(model)
-        body.pop("reasoning_effort")
-        return await _post_litellm(base, key, body, on_delta)
+    for _ in range(3):  # a 400 teaches the proxy's allowed efforts (or that it takes none); retry with that
+        sent = thinking.litellm_effort(model, catalog.max_effort(model)) if litellm_reasons(model) else None
+        if sent is None:
+            body.pop("reasoning_effort", None)
+            break
+        body["reasoning_effort"] = sent
+        try:
+            return await _post_litellm(base, key, body, on_delta)
+        except _Rejected as e:
+            thinking_litellm.learn(model, sent, str(e))
+    body.pop("reasoning_effort", None)
+    return await _post_litellm(base, key, body, on_delta)
 
 
 def litellm_reasons(model: str) -> bool:
     """True when the catalog says `model` supports reasoning and the proxy has not rejected reasoning_effort."""
-    return model not in thinking.LITELLM_REJECTED and catalog.has_cap(model, "reasoning")
+    return model not in thinking_litellm.REJECTED and catalog.has_cap(model, "reasoning")
 
 
 class _Rejected(Exception):

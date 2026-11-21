@@ -1,0 +1,5 @@
+<!doctype html>
+<!-- frontend/tests/workshop_page/index.html - harness for tests/workshop.mjs: real Workshop + Deck modules, no Stage, no WebGL -->
+<html><head><meta charset="utf-8" /><title>workshop harness</title><style>:root { --c: #4fd8ff; --bg: #02060c; --dim: #1b6a86; --sab: 0px; } body { margin: 0; background: var(--bg); color: #cfefff; font-family: sans-serif; } button { color: inherit; background: rgba(79,216,255,.1); border: 1px solid var(--dim); border-radius: 6px; }</style></head>
+<body><canvas id="stage" style="position:fixed;inset:0;width:100vw;height:100vh"></canvas><button id="deckbtn" type="button" style="position:fixed;left:8px;bottom:8px">deck</button>
+<script type="module" src="./main.ts"></script></body></html>

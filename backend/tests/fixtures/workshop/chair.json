@@ -1,0 +1,18 @@
+{
+  "name": "Chair",
+  "units": "mm",
+  "params": {
+    "seat_w": {"value": 420, "min": 300, "max": 600, "label": "Seat width", "unit": "mm"},
+    "seat_h": {"value": 450, "min": 350, "max": 550, "label": "Seat height", "unit": "mm"},
+    "back_h": {"value": 450, "min": 200, "max": 700, "label": "Back height", "unit": "mm"}
+  },
+  "parts": [
+    {"id": "seat", "kind": "box", "size": ["=seat_w", 40, "=seat_w"], "pos": [0, "=seat_h-20", 0], "color": "#c8a070", "tags": ["seat"]},
+    {"id": "leg", "kind": "box", "size": [40, "=seat_h-40", 40], "pos": ["=seat_w/2-30", "=(seat_h-40)/2", "=seat_w/2-30"], "color": "#8a6a40", "tags": ["legs"],
+     "mirror": "x", "array": {"type": "linear", "count": 2, "step": [0, 0, "=-(seat_w-60)"]}},
+    {"id": "back_post", "kind": "box", "size": [30, "=back_h", 30], "pos": ["=seat_w/2-30", "=seat_h+back_h/2", "=-seat_w/2+30"], "color": "#8a6a40", "mirror": "x", "tags": ["back"]},
+    {"id": "back_rail", "kind": "box", "size": ["=seat_w-60", 60, 20], "pos": [0, "=seat_h+back_h-80", "=-seat_w/2+30"], "color": "#c8a070", "tags": ["back"],
+     "array": {"type": "linear", "count": 3, "step": [0, "=-(back_h-140)/2", 0]}},
+    {"id": "brace", "kind": "box", "size": ["=seat_w-60", 20, 20], "pos": [0, 150, "=seat_w/2-30"], "color": "#8a6a40", "tags": ["legs"]}
+  ]
+}

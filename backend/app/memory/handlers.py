@@ -4,6 +4,7 @@
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from app.deck import hooks as deck_hooks
 from app.memory import client, focus, graph
 from app.views import view_msg
 
@@ -42,4 +43,5 @@ async def memory_search(send: Send, msg: dict) -> None:
     except client.MemoryUnavailable as e:
         await send({"t": "error", "message": str(e)})
         return
+    deck_hooks.memory_search_done(query, _text(msg, "project"), data)
     await send(view_msg("memory_graph", data, GRAPH_VIEW_TITLE))

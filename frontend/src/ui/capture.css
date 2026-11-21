@@ -3,6 +3,10 @@
   display: flex; gap: 12px; align-items: center; }
 #dock > button { position: relative; flex: none; }
 #dock > button[hidden] { display: none; }
+/* A narrow display (phone, tablet portrait): the dock wraps into two rows instead of running off the screen. */
+@media (max-width: 760px) {
+  #dock { flex-wrap: wrap; justify-content: center; row-gap: 8px; gap: 8px; width: calc(100vw - 16px); bottom: calc(12px + var(--sab)); }
+}
 #dock svg { display: block; }
 #camerabtn, #screenbtn { width: 64px; height: 64px; padding: 0; border-radius: 50%; display: grid; place-items: center;
   background: rgba(4, 18, 30, .6); box-shadow: 0 0 18px rgba(79,216,255,.25); }

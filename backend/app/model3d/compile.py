@@ -17,11 +17,20 @@ def part_scene_id(model: Model, part_id: str) -> str:
     return f"m:{model.id}:{part_id}"
 
 
-def part_obj(model: Model, part: Part, obj_id: str, parent_id: str, style: dict[str, Any] | None = None) -> dict[str, Any]:
+def part_obj(
+    model: Model, part: Part, obj_id: str, parent_id: str, style: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """One scene object for a part: layer colour overrides the part colour, opacities multiply. `style` overrides last."""
     lay = model.layer(part.layer)
-    obj: dict[str, Any] = {"id": obj_id, "kind": part.kind, "parent": parent_id,
-                           "pos": list(part.pos), "rot": list(part.rot), "scale": part.scale, **part.geom}
+    obj: dict[str, Any] = {
+        "id": obj_id,
+        "kind": part.kind,
+        "parent": parent_id,
+        "pos": list(part.pos),
+        "rot": list(part.rot),
+        "scale": part.scale,
+        **part.geom,
+    }
     color = lay["color"] or part.color
     if color:
         obj["color"] = color
@@ -35,9 +44,12 @@ def part_obj(model: Model, part: Part, obj_id: str, parent_id: str, style: dict[
 def compile_model(model: Model) -> list[dict[str, Any]]:
     """Ops that replace the model in the scene: del the root group (cascades), add root, add parts parent-first."""
     root = root_id(model)
+    root_obj: dict[str, Any] = {"id": root, "kind": "group", "scale": effective_scale(model)}
+    if model.origin != (0.0, 0.0, 0.0):
+        root_obj["pos"] = list(model.origin)
     ops: list[dict[str, Any]] = [
         {"op": "del", "id": root},
-        {"op": "add", "obj": {"id": root, "kind": "group", "scale": effective_scale(model)}},
+        {"op": "add", "obj": root_obj},
     ]
     for p in visible_parts(model):
         parent = part_scene_id(model, p.parent) if p.parent else root

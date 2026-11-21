@@ -41,6 +41,11 @@ export class ScenePlayer {
     this.selection.attach(canvas, camera);
   }
 
+  /** Id of the object under a normalised screen point (0..1, y down). */
+  pickAt(nx: number, ny: number): string | undefined {
+    return this.selection.pickAt(nx, ny);
+  }
+
   /** Asks the camera to glide so the bounds of the given objects fill the view. */
   frame(ids: string[], camera: THREE.PerspectiveCamera, look: THREE.Vector3): void {
     const box = new THREE.Box3();
@@ -60,7 +65,7 @@ export class ScenePlayer {
       this.syncTransform(e);
     }
     for (const e of this.entries.values()) if (e.anims.length) applyAnims(e, t);
-    followTargets(this.entries.values(), (id) => this.entries.get(id));
+    followTargets(this.entries.values(), (id) => this.entries.get(id), t);
     this.selection.update();
   }
 

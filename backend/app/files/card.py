@@ -3,6 +3,7 @@
 
 from typing import Any
 
+from app.entities.shapes import shape_of_file
 from app.files import store
 
 SUMMARY_CHARS = 400
@@ -19,16 +20,41 @@ def summary_of(meta: dict[str, Any], text: str) -> str:
 
 
 def ready_payload(meta: dict[str, Any]) -> dict[str, Any]:
-    return {"id": meta["id"], "kind": meta["kind"], "name": meta["name"], "size": meta["bytes"],
-            "url": store.download_url(meta["id"]), "meta": meta["meta"]}
+    return {
+        "id": meta["id"],
+        "kind": meta["kind"],
+        "name": meta["name"],
+        "size": meta["bytes"],
+        "url": store.download_url(meta["id"]),
+        "meta": meta["meta"],
+    }
+
+
+def entity_args(meta: dict[str, Any]) -> dict[str, Any]:
+    """add_entity arguments of a stored file (shared by file_to_scene, upload auto-placement and deck_place)."""
+    pages = meta["meta"].get("pages")
+    return {
+        "ref_type": "file",
+        "ref_id": meta["id"],
+        "shape": shape_of_file(meta["kind"]),
+        "title": meta["name"],
+        "subtitle": f"{meta['kind']}" + (f", {pages} pages" if pages else ""),
+    }
 
 
 def card_data(meta: dict[str, Any], text: str) -> dict[str, Any]:
     tables = [{"name": t["name"], "columns": t["columns"], "rows": t["rows"][:CARD_ROWS]} for t in meta["tables"][:6]]
     data: dict[str, Any] = {
-        "id": meta["id"], "name": meta["name"], "kind": meta["kind"], "size": meta["bytes"], "title": meta["title"],
-        "summary": summary_of(meta, text), "meta": meta["meta"], "outline": meta["outline"][:40],
-        "text_excerpt": text[:EXCERPT_CHARS], "truncated": meta["truncated"] or len(text) > EXCERPT_CHARS,
+        "id": meta["id"],
+        "name": meta["name"],
+        "kind": meta["kind"],
+        "size": meta["bytes"],
+        "title": meta["title"],
+        "summary": summary_of(meta, text),
+        "meta": meta["meta"],
+        "outline": meta["outline"][:40],
+        "text_excerpt": text[:EXCERPT_CHARS],
+        "truncated": meta["truncated"] or len(text) > EXCERPT_CHARS,
         "download_url": store.download_url(meta["id"]),
     }
     if tables:

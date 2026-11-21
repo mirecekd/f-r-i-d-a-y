@@ -94,7 +94,7 @@ All settings are environment variables, see [.env.example](.env.example).
 | `GEMINI_LIVE_MODEL` | `gemini-3.8-live` | Live model for voice |
 | `GEMINI_VOICE`, `GEMINI_LANGUAGE` | `Algieba`, `cs-CZ` | Voice and spoken language |
 | `FRIDAY_SEARCH_MODEL` | `gemini-flash-latest` | Model for web search |
-| `FRIDAY_AGENT_MODEL`, `FRIDAY_CHAT_MODEL` | `gemini-flash-latest` | Default models of the agent/chat roles |
+| `FRIDAY_AGENT_MODEL`, `FRIDAY_CHAT_MODEL` | newest `gemini-3*-flash` (agent) | Default models of the agent/chat roles |
 | `LITELLM_BASE_URL`, `LITELLM_API_KEY` | unset | Optional extra model provider (OpenAI-compatible proxy) |
 | `AGENTMEMORY_URL`, `AGENTMEMORY_SECRET` | unset | Optional memory service (orbs, recall, remember) |
 | `MCP_HUB_URL`, `MCP_HUB_TOKEN` | unset | Optional MCP hub, see `backend/mcp_servers.json` |

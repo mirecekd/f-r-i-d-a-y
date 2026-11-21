@@ -47,7 +47,9 @@ class Part:
             raise ModelError("part must be an object")
         unknown = set(d) - {f.name for f in fields(cls)}
         if unknown:
-            raise ModelError(f"unknown part fields {sorted(unknown)}; geometry props go into 'geom', metadata into 'props'")
+            raise ModelError(
+                f"unknown part fields {sorted(unknown)}; geometry props go into 'geom', metadata into 'props'"
+            )
         if "id" not in d:
             raise ModelError("part needs an id")
         part = cls(**{k: _copy(v) for k, v in d.items()})
@@ -68,7 +70,11 @@ class Part:
             raise ModelError(f"part {self.id}: scale must be a number or [x, y, z]")
         if self.opacity is not None and not (_num(self.opacity) and 0 <= self.opacity <= 1):
             raise ModelError(f"part {self.id}: opacity must be 0..1")
-        if not all(isinstance(x, str) for x in (self.name, self.layer)) or self.color is not None and not isinstance(self.color, str):
+        if (
+            not all(isinstance(x, str) for x in (self.name, self.layer))
+            or self.color is not None
+            and not isinstance(self.color, str)
+        ):
             raise ModelError(f"part {self.id}: name, layer and color must be strings")
         if not (isinstance(self.tags, list) and all(isinstance(t, str) for t in self.tags)):
             raise ModelError(f"part {self.id}: tags must be a list of strings")
@@ -83,7 +89,13 @@ class Part:
 
 
 def _copy(v: Any) -> Any:
-    return [_copy(x) for x in v] if isinstance(v, list) else {k: _copy(x) for k, x in v.items()} if isinstance(v, dict) else v
+    return (
+        [_copy(x) for x in v]
+        if isinstance(v, list)
+        else {k: _copy(x) for k, x in v.items()}
+        if isinstance(v, dict)
+        else v
+    )
 
 
 @dataclass
@@ -94,18 +106,42 @@ class Model:
     auto_fit: bool = True
     parts: dict[str, Part] = field(default_factory=dict)
     layers: dict[str, dict[str, Any]] = field(default_factory=dict)
+    origin: tuple[float, float, float] = (
+        0.0,
+        0.0,
+        0.0,
+    )  # scene position of the root group (a workshop lives far from the desk)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"id": self.id, "units": self.units, "scale_to_scene": self.scale_to_scene,
-                "auto_fit": self.auto_fit, "parts": [p.to_dict() for p in self.parts.values()], "layers": _copy(self.layers)}
+        d = {
+            "id": self.id,
+            "units": self.units,
+            "scale_to_scene": self.scale_to_scene,
+            "auto_fit": self.auto_fit,
+            "parts": [p.to_dict() for p in self.parts.values()],
+            "layers": _copy(self.layers),
+        }
+        if self.origin != (0.0, 0.0, 0.0):
+            d["origin"] = list(self.origin)
+        return d
 
     @classmethod
     def from_dict(cls, d: object) -> "Model":
         if not isinstance(d, dict) or not isinstance(d.get("id"), str):
             raise ModelError("model must be an object with an id")
         units = d.get("units", "mm")
-        model = cls(d["id"], units, d.get("scale_to_scene", UNIT_SCALE.get(units, 1.0)),
-                    bool(d.get("auto_fit", True)), {}, _copy(d.get("layers", {})))
+        model = cls(
+            d["id"],
+            units,
+            d.get("scale_to_scene", UNIT_SCALE.get(units, 1.0)),
+            bool(d.get("auto_fit", True)),
+            {},
+            _copy(d.get("layers", {})),
+        )
+        raw_origin = d.get("origin", [0, 0, 0])
+        if not (isinstance(raw_origin, list) and len(raw_origin) == 3 and all(_num(v) for v in raw_origin)):
+            raise ModelError("origin must be [x, y, z] numbers")
+        model.origin = (float(raw_origin[0]), float(raw_origin[1]), float(raw_origin[2]))
         raw = d.get("parts", [])
         if not isinstance(raw, list):
             raise ModelError("parts must be a list")
@@ -153,5 +189,9 @@ class Model:
         for name, lay in self.layers.items():
             if not isinstance(lay, dict) or set(lay) - set(LAYER_DEFAULT):
                 raise ModelError(f"layer '{name}' may only hold {sorted(LAYER_DEFAULT)}")
-            if not (_num(lay.get("opacity", 1)) and _num(lay.get("z_index", 0)) and isinstance(lay.get("visible", True), bool)):
+            if not (
+                _num(lay.get("opacity", 1))
+                and _num(lay.get("z_index", 0))
+                and isinstance(lay.get("visible", True), bool)
+            ):
                 raise ModelError(f"layer '{name}': opacity/z_index must be numbers, visible a boolean")

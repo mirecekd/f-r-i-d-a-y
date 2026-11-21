@@ -67,6 +67,18 @@ export class Stage {
     this.camera.updateProjectionMatrix();
   }
 
+  /** Renders one frame now and returns it on an offscreen canvas at most `width` px wide (same task, so the buffer is still valid). */
+  snapshot(width: number): HTMLCanvasElement {
+    this.composer.render();
+    const src = this.renderer.domElement;
+    const k = Math.min(1, width / Math.max(1, src.width));
+    const out = document.createElement("canvas");
+    out.width = Math.max(1, Math.round(src.width * k));
+    out.height = Math.max(1, Math.round(src.height * k));
+    out.getContext("2d")!.drawImage(src, 0, 0, out.width, out.height);
+    return out;
+  }
+
   private frame(): void {
     this.timer.update();
     const real = Math.min(this.timer.getDelta(), 0.1);

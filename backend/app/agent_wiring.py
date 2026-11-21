@@ -3,20 +3,22 @@
 
 import asyncio
 import logging
-import os
 import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import replace
 from typing import Any
 
-from app.agent import live_text, prefs
-from app.agent.catalog import catalog
+from app.agent import live_text
 from app.agent.draw import make_draw_tool
 from app.agent.loop import Emit, run_agent
 from app.agent.prompt import chat_prompt
-from app.agent.voice_settings import NEXT_SESSION_NOTICE, apply_language, apply_thinking, apply_voice, models_fields
+from app.agent_settings import SettingsMixin, pinned_model
 from app.approval import Approvals
+from app.deck.session import DeckSession
+from app.deck.tools import register_deck_tools
+from app.entities.tools import register_entity_tools
 from app.files import register_file_tools
+from app.imaging import register_imaging_tools
 from app.mcp import register_mcp_tools
 from app.memory.tools import register_memory_tools
 from app.model3d.tools import register_model_tools
@@ -25,23 +27,17 @@ from app.tools_friday import Ctx, register_all
 from app.tools_friday.search import register_search_tool
 from app.vision import register_vision_tools
 from app.voice.language import current_language
-from app.voice.session import live_model
 from app.voice.tools import Tool, ToolRegistry
+from app.webpages.tools import register_web_tools
+from app.workshop.tools import register_workshop_tools
 
 log = logging.getLogger("friday.agent")
 
-DEFAULT_MODEL = "gemini-flash-latest"
 MAX_HISTORY = 40
 Delta = Callable[[str], Awaitable[None]]
 
 
-def pinned_model(role: str) -> str:
-    if role == "chat":
-        return live_model()
-    return prefs.load()[prefs.ROLES[role]] or os.getenv(f"FRIDAY_{role.upper()}_MODEL") or DEFAULT_MODEL
-
-
-class AgentSession:
+class AgentSession(SettingsMixin):
     """One browser connection: its tool registry (incl. `draw`), model pinning and text-chat history."""
 
     def __init__(self, scene: SceneStore, emit: Emit, base: ToolRegistry):
@@ -56,6 +52,12 @@ class AgentSession:
         self.models = register_model_tools(self.registry, ctx)
         self.vision = register_vision_tools(self.registry, ctx, lambda: pinned_model("agent"))
         self.files = register_file_tools(self.registry, ctx, self.vision, lambda: pinned_model("agent"))
+        register_entity_tools(self.registry, ctx, self.vision, self.files, self.approvals)
+        register_imaging_tools(self.registry, ctx, self.models, lambda: pinned_model("agent"))
+        self.deck = DeckSession(ctx, self.models, self.files, self.vision)
+        register_deck_tools(self.registry, self.deck)
+        self.workshop = register_workshop_tools(self.registry, ctx)
+        self.web = register_web_tools(self.registry, ctx, self.deck, self.files, self.vision)
         self.registry.register(
             make_draw_tool(lambda: pinned_model("agent"), self.worker_tools, emit)
         )
@@ -80,53 +82,6 @@ class AgentSession:
 
         return replace(tool, handler=handler)
 
-    async def send_models(self) -> None:
-        await self.emit(
-            {
-                "t": "models",
-                "catalog": await catalog.get(),
-                "pinned": {"agent_model": pinned_model("agent"), "chat_model": pinned_model("chat")},
-                **models_fields(pinned_model("chat")),
-            }
-        )
-
-    async def set_language(self, msg: dict, voice_active: bool = False) -> None:
-        error = apply_language(msg)
-        if error:
-            return await self.emit({"t": "error", "message": error})
-        self.history[0] = {"role": "system", "content": chat_prompt(current_language())}
-        await self._changed(voice_active)
-
-    async def set_voice(self, msg: dict, voice_active: bool = False) -> None:
-        error = apply_voice(pinned_model("chat"), msg)
-        if error:
-            return await self.emit({"t": "error", "message": error})
-        await self._changed(voice_active)
-
-    async def set_thinking(self, msg: dict, voice_active: bool = False) -> None:
-        error = apply_thinking(msg)
-        if error:
-            return await self.emit({"t": "error", "message": error})
-        await self._changed(voice_active)
-
-    async def _changed(self, voice_active: bool) -> None:
-        await self.send_models()
-        if voice_active:
-            await self.emit({"t": "notice", "text": NEXT_SESSION_NOTICE})
-
-    async def set_model(self, msg: dict, voice_active: bool = False) -> None:
-        role, model = msg.get("role"), str(msg.get("model", ""))
-        await catalog.get()
-        if role not in prefs.ROLES:
-            await self.emit({"t": "error", "message": f"set_model: unknown role {role}"})
-        elif catalog.provider_of(model) is None:
-            await self.emit({"t": "error", "message": f"set_model: unknown model {model}"})
-        elif not catalog.has_role(model, role):
-            await self.emit({"t": "error", "message": f"set_model: model {model} is not available for role {role}"})
-        else:
-            prefs.save_model(role, model)
-            await self._changed(voice_active and role == "chat")
-
     def chat(self, text: str) -> None:
         """Start a text-chat turn in the background so the receive loop keeps running."""
         task = asyncio.create_task(self._chat(text))
@@ -150,6 +105,8 @@ class AgentSession:
         for task in list(self._chats):
             task.cancel()
         await asyncio.gather(*self._chats, return_exceptions=True)
+        self.deck.close()
+        self.workshop.close()
         await self.vision.close()
 
     async def _chat(self, text: str) -> None:

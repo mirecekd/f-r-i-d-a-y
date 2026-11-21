@@ -8,7 +8,7 @@ import httpx
 import pytest
 from google.genai import errors, types
 
-from app.agent import llm, llm_gemini, prefs, thinking
+from app.agent import llm, llm_gemini, prefs, thinking, thinking_litellm
 from app.agent.catalog import catalog
 from app.voice import ToolRegistry, session
 
@@ -23,7 +23,8 @@ def clean_tables(monkeypatch):
         monkeypatch.setattr(table, "no_config", set(table.no_config))
         monkeypatch.setattr(table, "budget_only", set())
         monkeypatch.setattr(table, "bad_levels", {k: set(v) for k, v in table.bad_levels.items()})
-    monkeypatch.setattr(thinking, "LITELLM_REJECTED", set())
+    monkeypatch.setattr(thinking_litellm, "REJECTED", set())
+    monkeypatch.setattr(thinking_litellm, "CEILING", {})
 
 
 def test_default_is_high_and_pin_and_env_fallback(monkeypatch):
@@ -140,7 +141,7 @@ def test_litellm_sends_reasoning_effort_only_for_reasoning_models(monkeypatch):
     litellm_run(monkeypatch, handler)
     assert bodies[0]["reasoning_effort"] == "low"  # minimal maps to low
     assert "reasoning_effort" not in bodies[1]
-    assert [thinking.reasoning_effort(x) for x in thinking.LEVELS] == ["low", "low", "medium", "high"]
+    assert [thinking.litellm_effort("r1", None, x) for x in thinking.LEVELS] == ["low", "low", "medium", "high", "high"]
 
 
 def test_litellm_400_retries_once_without_effort_and_remembers(monkeypatch):
@@ -156,7 +157,7 @@ def test_litellm_400_retries_once_without_effort_and_remembers(monkeypatch):
     litellm_run(monkeypatch, handler)
     litellm_run(monkeypatch, handler)
     assert ["reasoning_effort" in b for b in bodies] == [True, False, False]
-    assert "r1" in thinking.LITELLM_REJECTED
+    assert "r1" in thinking_litellm.REJECTED
 
 
 def test_other_litellm_400_without_effort_is_still_an_error(monkeypatch):

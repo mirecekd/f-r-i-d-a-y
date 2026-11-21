@@ -24,5 +24,5 @@ export const KINDS: Record<string, ViewKind> = {
   map: { render: renderMap, size: [420, 320] },
   json: { render: renderJson, size: [340, 280] },
   // Whole module (and 3d-force-graph) is loaded on first use to keep the main bundle small.
-  memory_graph: { render: (body, data) => import("./memory_graph").then((m) => m.renderMemoryGraph(body, data)), size: [560, 420] },
+  memory_graph: { render: (body, data) => import("./memory_view").then((m) => m.renderMemoryGraph(body, data)), size: [560, 420] },
 };

@@ -3,6 +3,7 @@
 
 from typing import Any
 
+from app.deck import hooks as deck_hooks
 from app.memory import awareness, client, focus, graph
 from app.tools_friday.ctx import Ctx
 from app.views import view_msg
@@ -62,6 +63,8 @@ def register_memory_tools(registry: ToolRegistry, ctx: Ctx) -> None:
                 data = await graph.memory_graph(project)
         except client.MemoryUnavailable as e:
             return {"error": str(e)}
+        if query:
+            deck_hooks.memory_search_done(query, project, data)
         msg = view_msg("memory_graph", data, GRAPH_VIEW_TITLE)
         await ctx.emit(msg)
         out: dict[str, Any] = {"ok": True, "id": msg["id"], "nodes": len(data["nodes"]), "links": len(data["links"])}

@@ -3,11 +3,13 @@
 
 from typing import Any
 
+from app.agent.thinking_litellm import top_effort
+
 EXCLUDE = ("embed", "rerank", "stability", "nova-2-multimodal", "image")
 REGIONS = ("eu", "us", "global", "apac")
 
 
-def entry(model_id: str, caps: dict[str, bool] | None = None) -> dict[str, Any]:
+def entry(model_id: str, caps: dict[str, Any] | None = None) -> dict[str, Any]:
     """`eu.anthropic.claude-opus-5` -> group 'anthropic', label 'claude-opus-5 (eu)'."""
     parts = model_id.split(".", 2)
     region = ""
@@ -18,6 +20,8 @@ def entry(model_id: str, caps: dict[str, bool] | None = None) -> dict[str, Any]:
     else:
         group, name = "litellm", model_id
     label = f"{name} ({region})" if region else name
+    if caps and caps.get("max_effort"):
+        label += " (max thinking)"
     out: dict[str, Any] = {"id": model_id, "provider": "litellm", "label": label, "group": group, "roles": ["agent"]}
     if caps is not None:
         out["caps"] = caps
@@ -46,6 +50,8 @@ def filter_model_info(payload: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         if info.get("supports_function_calling") is not True:
             continue
-        caps = {"tools": True, "vision": bool(info.get("supports_vision")), "reasoning": bool(info.get("supports_reasoning"))}
+        caps: dict[str, Any] = {"tools": True, "vision": bool(info.get("supports_vision")), "reasoning": bool(info.get("supports_reasoning"))}
+        if caps["reasoning"] and (top := top_effort(info)):
+            caps["max_effort"] = top
         entries[model_id] = entry(model_id, caps)
     return sorted(entries.values(), key=lambda e: (e["group"], e["label"]))

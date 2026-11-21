@@ -4,7 +4,8 @@ import { el } from "../views/dom";
 import { Dropdown } from "./voicepick";
 import "./thinkingpick.css";
 
-const LABEL: Record<string, string> = { minimal: "Minimalni", low: "Nizke", medium: "Stredni", high: "Vysoke" };
+const LABEL: Record<string, string> = { minimal: "Minimalni", low: "Nizke", medium: "Stredni", high: "Vysoke", max: "Maximalni" };
+const HINT: Record<string, string> = { max: "Maximum pro agentni modely (hlasovy model max. vysoke)" };
 
 /** One thinking-level dropdown ("Premysleni") for the voice model and the agent models, fed by the `models` message. */
 export class ThinkingPick {
@@ -18,7 +19,7 @@ export class ThinkingPick {
     net.on((m) => {
       if (m.t !== "models") return;
       const levels: string[] = Array.isArray(m.thinking_levels) ? m.thinking_levels : [];
-      this.level.update(levels.map((id) => ({ id, label: LABEL[id] ?? id })), m.thinking ?? "");
+      this.level.update(levels.map((id) => ({ id, label: LABEL[id] ?? id, hint: HINT[id] })), m.thinking ?? "");
     });
   }
 }

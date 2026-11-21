@@ -6,6 +6,7 @@ import asyncio
 from fastapi import APIRouter, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
+from app.deck import desk
 from app.vision import store
 from app.vision.images import MAX_BYTES, MIME_BY_EXT, ImageRejected, inspect_image, sniff_mime
 
@@ -47,6 +48,7 @@ async def upload(file: UploadFile, request: Request):
         meta = await ingest(raw, file.filename, file.content_type or "")
     except ImageRejected as e:
         return JSONResponse({"error": str(e)}, status_code=413 if "larger" in str(e) else 400)
+    await desk.announce_and_place({"t": "image_ready", **ready_payload(meta)}, store.entity_args(meta))
     return ready_payload(meta)
 
 

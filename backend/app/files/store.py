@@ -8,6 +8,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from app.deck import hooks as deck_hooks
 from app.vision.store import ID_RE, safe_name, uploads_dir
 
 DOWNLOAD_RE = re.compile(r"^([0-9a-f]{32})$")
@@ -34,6 +35,7 @@ def save(raw: bytes, name: object, extracted: dict[str, Any]) -> dict[str, Any]:
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(meta, ensure_ascii=False))
     tmp.replace(path)
+    deck_hooks.file_saved(meta, extracted["text"])
     return meta
 
 

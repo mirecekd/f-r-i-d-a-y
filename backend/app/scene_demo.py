@@ -1,7 +1,7 @@
 # backend/app/scene_demo.py
 """Demo scene showing every kind of the scene DSL (sent for {t:'demo', what:'scene'} when FRIDAY_DEMO=1)."""
 
-
+from app.scene_demo_entities import entity_demo
 from app.scene_demo_gltf import tetrahedron_data_uri
 
 
@@ -27,6 +27,14 @@ def _floor_plan() -> list[dict]:
     return [
         {"id": "plan", "kind": "extrude", "pos": [-12, -3.2, 6], "walls": walls, "thickness": 0.2, "height": 1.6, "color": "#ffd24a"},
         {"id": "plan-t", "kind": "text", "pos": [-8, -0.6, 9], "text": "Floor plan (extrude)", "size": 0.45, "color": "#ffd24a"},
+    ]
+
+
+def _lathe_demo() -> list[dict]:
+    vase = [[0, 0], [0.8, 0], [1.3, 1.2], [0.9, 2.4], [0.5, 3.0], [0.7, 3.4]]
+    return [
+        {"id": "vase", "kind": "lathe", "pos": [-16, -3.2, 6], "profile": vase, "segments": 32, "color": "#7be0a0"},
+        {"id": "vase-t", "kind": "text", "pos": [-16, 0.6, 6], "text": "Vase (lathe)", "size": 0.45, "color": "#7be0a0"},
     ]
 
 
@@ -76,7 +84,7 @@ def _shapes() -> list[dict]:
 
 
 def demo_objects() -> list[dict]:
-    return _robot() + _floor_plan() + _csg_demo() + _network() + _charts() + _shapes()
+    return _robot() + _floor_plan() + _lathe_demo() + _csg_demo() + _network() + _charts() + _shapes() + entity_demo()
 
 
 DEMO_CAMERA = {"op": "camera", "pos": [-1, 8, 30], "look": [-1, -1, 0]}

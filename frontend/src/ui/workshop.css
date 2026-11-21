@@ -1,0 +1,35 @@
+/* frontend/src/ui/workshop.css - Workshop side panel (glass, matches deck.css) */
+.ws-panel { position: fixed; z-index: 9; right: 12px; top: 56px; width: min(320px, calc(100vw - 24px)); max-height: calc(100vh - 190px - var(--sab));
+  display: flex; flex-direction: column; background: rgba(4, 18, 30, .88); backdrop-filter: blur(14px); border: 1px solid rgba(79,216,255,.4);
+  border-radius: 10px; box-shadow: 0 0 30px rgba(79,216,255,.14), inset 0 0 20px rgba(79,216,255,.05); }
+.ws-panel[hidden] { display: none; }
+.ws-panel.collapsed .ws-body { display: none; }
+@media (max-width: 760px) { .ws-panel { right: auto; left: 12px; top: auto; bottom: calc(112px + var(--sab)); max-height: 46vh; } }
+.ws-head { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-bottom: 1px solid rgba(79,216,255,.25); }
+.ws-name { font-family: Orbitron, Rajdhani, sans-serif; letter-spacing: .3em; font-size: 12px; color: var(--c); }
+.ws-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.ws-collapse { min-width: 44px; min-height: 44px; padding: 0; font: inherit; font-size: 20px; }
+.ws-body { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 12px; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--dim) transparent; }
+.ws-h { font-size: 10px; letter-spacing: .25em; color: var(--c); margin-top: 4px; }
+.ws-note { font-size: 12px; color: #ffcf6b; }
+.ws-hint { font-size: 13px; color: #8fc8dc; padding: 6px 0; }
+.ws-hint[hidden] { display: none; }
+.ws-param { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "label label" "slider field"; gap: 2px 8px; align-items: center; }
+.ws-label { grid-area: label; font-size: 13px; }
+.ws-slider { grid-area: slider; width: 100%; min-height: 44px; accent-color: var(--c); }
+.ws-field { grid-area: field; width: 78px; min-height: 44px; background: rgba(0,0,0,.4); border: 1px solid var(--dim); border-radius: 6px;
+  color: inherit; padding: 0 8px; font: inherit; text-align: right; outline: none; }
+.ws-field:focus { border-color: var(--c); }
+.ws-source { display: flex; align-items: center; gap: 6px; }
+.ws-src-pick { flex: 1; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 8px; font: inherit; font-size: 14px; text-align: left; }
+.ws-src-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ws-src-x { min-width: 44px; min-height: 44px; padding: 0; font: inherit; }
+.ws-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.ws-acts button { flex: 1; min-height: 44px; font: inherit; font-size: 14px; }
+.ws-ask { display: flex; gap: 6px; }
+.ws-ask-input { flex: 1; min-width: 0; min-height: 44px; background: rgba(0,0,0,.4); border: 1px solid var(--dim); border-radius: 6px;
+  color: inherit; padding: 0 10px; font: inherit; outline: none; }
+.ws-ask-input:focus { border-color: var(--c); }
+.ws-ask-go { min-height: 44px; font: inherit; font-size: 14px; }
+/* Desk-only action: removing a tile from the desk makes no sense inside the workshop (sources are removed from the panel). */
+body.ws-open .eb-bar .eb-close { display: none; }

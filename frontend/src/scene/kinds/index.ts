@@ -8,8 +8,11 @@ import { GRAPH } from "./graph";
 import { CHART3D } from "./chart";
 import { SURFACE } from "./surface";
 import { EXTRUDE } from "./extrude";
+import { LATHE } from "./lathe";
 import { CSG } from "./csg";
 import { IMAGE, GLTF } from "./media";
+import { ENTITY } from "./entity";
+import { LINK } from "./link";
 
 export const KINDS: Record<string, Kind> = {
   ...PRIMITIVES,
@@ -26,5 +29,8 @@ export const KINDS: Record<string, Kind> = {
   surface: SURFACE,
   gltf: GLTF,
   extrude: EXTRUDE,
+  lathe: LATHE,
   csg: CSG,
+  entity: ENTITY,
+  link: LINK,
 };

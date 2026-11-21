@@ -6,6 +6,8 @@ import { KINDS_ORDER, KIND_COLOR, type Kind, type MemNode } from "./memory_orbs"
 
 export interface UiHooks {
   search(query: string): void;
+  submit(query: string): void;
+  cancel(): void;
   deselect(): void;
   toggleFilters(): void;
   toggleFull(): void;
@@ -17,6 +19,9 @@ export interface MemoryUi {
   root: HTMLElement;
   holder: HTMLElement;
   setStatus(text: string): void;
+  setSearchText(text: string): void;
+  setBusy(query: string | null): void;
+  mountHits(panel: HTMLElement): void;
   setKey(shown: Record<Kind, number>, enabled: Record<Kind, boolean>): void;
   setFiltersOpen(on: boolean): void;
   mountDrawer(drawer: HTMLElement): void;
@@ -26,6 +31,7 @@ export interface MemoryUi {
 }
 
 const ICON_FULL = "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5";
+const ICON_FIND = "M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13M15.5 15.5L21 21";
 const ICON_GEAR = ((): string => {
   const ring = (r: number) => `M${12 + r} 12a${r} ${r} 0 1 0-${2 * r} 0a${r} ${r} 0 1 0 ${2 * r} 0`;
   const teeth = Array.from({ length: 8 }, (_, i) => {
@@ -67,6 +73,18 @@ export function buildMemoryUi(hooks: UiHooks): MemoryUi {
   search.placeholder = "Hledat v pameti...";
   search.autocomplete = "off";
   search.oninput = () => hooks.search(search.value.trim().toLowerCase());
+  const submit = () => search.value.trim() && hooks.submit(search.value.trim());
+  search.onkeydown = (e) => { if (e.key === "Enter") submit(); };
+  const find = button("mg-btn mg-find", "Hledat v pameti", icon(ICON_FIND));
+  find.onclick = submit;
+  const busy = el("div", "mg-busy");
+  busy.hidden = true;
+  busy.setAttribute("role", "status");
+  const busyText = el("span", "", "Hledam v pameti...");
+  const busyStop = el("button", "mg-cancel", "Zrusit hledani");
+  busyStop.type = "button";
+  busyStop.onclick = () => hooks.cancel();
+  busy.append(el("span", "mg-spin"), busyText, busyStop);
   const status = el("div", "mg-status");
   const gear = button("mg-btn mg-gear", "Filtry a zobrazeni", icon(ICON_GEAR));
   gear.setAttribute("aria-expanded", "false");
@@ -77,8 +95,8 @@ export function buildMemoryUi(hooks: UiHooks): MemoryUi {
   close.onclick = () => hooks.close();
   const bar = el("div", "mg-bar");
   const barRow = el("div", "mg-bar-row");
-  barRow.append(search, gear, full, close);
-  bar.append(barRow, status);
+  barRow.append(search, find, gear, full, close);
+  bar.append(barRow, busy, status);
 
   const key = el("div", "mg-key");
   key.setAttribute("aria-hidden", "true");
@@ -103,6 +121,13 @@ export function buildMemoryUi(hooks: UiHooks): MemoryUi {
     root,
     holder,
     setStatus: (text) => (status.textContent = text),
+    setSearchText: (text) => (search.value = text),
+    setBusy(query) {
+      busy.hidden = query === null;
+      busyText.textContent = "Hledam v pameti...";
+      busy.title = query ?? "";
+    },
+    mountHits: (panel) => root.append(panel),
     setKey(shown, enabled) {
       for (const kind of KINDS_ORDER) {
         keyItems[kind].item.hidden = !enabled[kind];

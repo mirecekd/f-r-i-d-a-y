@@ -18,3 +18,6 @@ __pycache__/
 
 # local-only compose additions (networks of other services on this host)
 docker-compose.override.yml
+
+# hand gesture model (downloaded by scripts/fetch-gesture-model.sh)
+frontend/public/models/

@@ -5,6 +5,7 @@ import { KINDS } from "./index";
 import type { Cleanup, ViewMsg } from "./types";
 
 interface Panel {
+  id: string;
   root: HTMLElement;
   cleanup?: Cleanup;
 }
@@ -15,6 +16,7 @@ const MIN_H = 120;
 /** Manages floating, draggable, resizable glass panels above the canvas. */
 export class ViewHost {
   private panels = new Map<string, Panel>();
+  private alias = new Map<string, string>(); // id of a view folded into an open panel -> id of that panel
   private layer = el("div", "views-layer");
   private z = 10;
   private cascade = 0;
@@ -24,6 +26,13 @@ export class ViewHost {
   }
 
   show(m: ViewMsg): void {
+    const live = [...this.panels.values()].find((p) => p.root.dataset.kind === m.kind && p.cleanup?.update);
+    if (live) { // same kind already open and able to refresh itself: update in place, no second window
+      this.alias.set(m.id, live.id);
+      live.cleanup!.update!(m.data);
+      this.raise(live.root);
+      return;
+    }
     this.close(m.id);
     const kind = KINDS[m.kind];
     const root = el("section", "vp");
@@ -50,8 +59,9 @@ export class ViewHost {
     this.dragMove(root, head);
     this.dragResize(root, grip);
     root.addEventListener("pointerdown", () => this.raise(root), true);
+    body.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true }); // scroll the card, never zoom the scene under it
 
-    const panel: Panel = { root };
+    const panel: Panel = { id: m.id, root };
     this.panels.set(m.id, panel);
     if (this.panels.size > 3) this.tile();
     if (!kind) return this.fail(body, `unknown view kind: ${m.kind}`);
@@ -90,11 +100,12 @@ export class ViewHost {
   }
 
   close(id: string): void {
-    const p = this.panels.get(id);
+    const p = this.panels.get(this.alias.get(id) ?? id);
     if (!p) return;
+    for (const [k, v] of this.alias) if (v === p.id) this.alias.delete(k);
     p.cleanup?.();
     p.root.remove();
-    this.panels.delete(id);
+    this.panels.delete(p.id);
   }
 
   ids(): string[] {

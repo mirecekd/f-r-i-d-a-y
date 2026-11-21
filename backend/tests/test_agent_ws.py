@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import agent_wiring, main
-from app.agent import loop
+from app.agent import agent_model, loop
 from app.agent.catalog import catalog
 from app.voice.tools import Tool
 
@@ -39,7 +39,7 @@ def test_models_on_connect_and_set_model_persists(client):
     with client.websocket_connect("/ws") as ws:
         first = drain(ws, lambda m: m["t"] == "models")[-1]
         assert first["catalog"] == ENTRIES
-        assert first["pinned"]["agent_model"] == agent_wiring.DEFAULT_MODEL
+        assert first["pinned"]["agent_model"] == agent_model.DEFAULT_MODEL
         ws.send_json({"t": "set_model", "role": "agent", "model": "l1"})
         echoed = drain(ws, lambda m: m["t"] == "models")[-1]
         assert echoed["pinned"]["agent_model"] == "l1"
@@ -107,3 +107,15 @@ def test_session_registers_draw_and_hides_it_from_the_agent():
     assert "draw" not in session.worker_tools()
     assert "draw" not in base.tools  # per-connection registry, the shared one is untouched
     assert isinstance(session.registry.tools["draw"], Tool)
+
+
+def test_stale_agent_pin_falls_back_with_a_notice(client, monkeypatch):
+    from app.agent import prefs
+
+    entries = [{"id": "gemini-3.8-flash", "provider": "gemini", "label": "F", "group": "google", "roles": ["agent"]}]
+    monkeypatch.setattr(catalog, "_entries", {"gemini": (0.0, entries)})
+    prefs.save_model("agent", "gemini-3.1-pro-gone")
+    with client.websocket_connect("/ws") as ws:
+        seen = drain(ws, lambda m: m["t"] == "models")
+    assert any(m["t"] == "notice" and "gemini-3.1-pro-gone" in m["text"] for m in seen)
+    assert seen[-1]["pinned"]["agent_model"] == "gemini-3.8-flash"

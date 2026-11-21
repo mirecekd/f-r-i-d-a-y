@@ -2,7 +2,7 @@
 """Pinned preferences, persisted as JSON under FRIDAY_DATA_DIR (default /srv/data).
 
 Keys: agent_model, chat_model (model ids), language (BCP-47 code), voice ({model id: prebuilt voice id}),
-thinking (minimal|low|medium|high).
+thinking (minimal|low|medium|high|max).
 """
 
 import json

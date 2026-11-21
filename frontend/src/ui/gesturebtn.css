@@ -1,0 +1,17 @@
+/* frontend/src/ui/gesturebtn.css */
+#gesturebtn { width: 64px; height: 64px; padding: 0; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(4, 18, 30, .6); box-shadow: 0 0 18px rgba(79,216,255,.25); }
+#gesturebtn.on { background: rgba(79,216,255,.22); box-shadow: 0 0 22px rgba(79,216,255,.5); border-color: #8fe8ff; color: #d8f6ff; }
+#gesturepreview { position: fixed; right: 16px; bottom: 120px; z-index: 8; width: 160px; height: 120px; border: 1px solid #8fe8ff;
+  border-radius: 8px; overflow: hidden; background: #000; cursor: grab; touch-action: none; box-shadow: 0 0 14px rgba(79,216,255,.35); }
+#gesturepreview[hidden] { display: none; }
+#gesturepreview .gp-video { position: absolute; inset: 0; width: 160px; height: 120px; object-fit: cover; transform: scaleX(-1); pointer-events: none; }
+#gesturepreview canvas { position: absolute; inset: 0; pointer-events: none; }
+#gesturepreview .gp-tag { position: absolute; left: 6px; top: 4px; font-size: 10px; letter-spacing: .14em; color: #d8f6ff;
+  text-shadow: 0 0 6px rgba(79,216,255,.8); text-transform: uppercase; pointer-events: none; }
+#gesturepreview .gp-note { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 6px; font-size: 10px; line-height: 1.3;
+  color: #ffd24a; background: rgba(4, 18, 30, .85); pointer-events: none; }
+#gesturepreview .gp-note[hidden] { display: none; }
+#gesturehint { position: fixed; left: 50%; bottom: calc(118px + var(--sab)); transform: translateX(-50%); z-index: 9; padding: 4px 12px;
+  border-radius: 8px; font-size: 12px; letter-spacing: .12em; color: #d8f6ff; background: rgba(4, 18, 30, .7); pointer-events: none; }
+#gesturehint[hidden] { display: none; }

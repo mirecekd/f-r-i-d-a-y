@@ -41,6 +41,11 @@ def _local_box(p: Part) -> Bounds:
         h = g.get("height", 1.0) if isinstance(g.get("height", 1.0), (int, float)) else 1.0
         if pts:
             return [min(q[0] for q in pts), min(q[1] for q in pts), -abs(h)], [max(q[0] for q in pts), max(q[1] for q in pts), abs(h)]
+    if p.kind == "lathe" and g.get("profile"):
+        pts = [q for q in g["profile"] if isinstance(q, (list, tuple)) and len(q) >= 2]
+        if pts:
+            r = max(abs(q[0]) for q in pts)
+            return [-r, min(q[1] for q in pts), -r], [r, max(q[1] for q in pts), r]
     if p.kind in ("group", "label", "text", "image", "gltf", "csg"):
         return [0.0] * 3, [0.0] * 3
     return [-0.5] * 3, [0.5] * 3

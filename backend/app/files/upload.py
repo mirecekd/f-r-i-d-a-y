@@ -4,8 +4,9 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 
+from app.deck import desk
 from app.files import store
-from app.files.card import ready_payload
+from app.files.card import entity_args, ready_payload
 from app.files.common import MAX_BYTES, ExtractError
 from app.files.service import ingest
 
@@ -19,6 +20,7 @@ async def ingest_http(raw: bytes, name: object) -> JSONResponse:
         meta = await ingest(raw, name)
     except ExtractError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
+    await desk.announce_and_place({"t": "file_ready", **ready_payload(meta)}, entity_args(meta))
     return JSONResponse(ready_payload(meta))
 
 

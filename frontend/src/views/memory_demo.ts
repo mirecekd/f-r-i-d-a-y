@@ -41,3 +41,19 @@ export function demoGraph(total = 150): { nodes: MemNode[]; links: MemLink[] } {
   concepts.forEach((c, i) => links.push({ source: c.id, target: sessions[i % sessions.length].id, kind: "seen_in", weight: 0.6 }));
   return { nodes, links };
 }
+
+/** Demo result for the search view (no backend): the generic demo graph plus a synthetic highlight, hits and summary for `query`. */
+export function demoSearchGraph(query: string, total = 150): Record<string, unknown> {
+  const g = demoGraph(total);
+  const pool = g.nodes.filter((n) => n.kind === "memory" || n.kind === "session");
+  const pick = [0, 3, 7, 12, 18, 25, 31, 40, 52, 61, 70, 80].map((i) => pool[i % pool.length]);
+  const hits = [...new Set(pick)].map((n, i) => ({
+    id: n.id, label: n.label, kind: n.kind, score: Math.round((0.95 - i * 0.07) * 1000) / 1000,
+    snippet: `Demo snippet ${i + 1} about ${query}: what was decided and why.`, ts: n.ts, project: n.project,
+  }));
+  const concept = g.nodes.find((n) => n.kind === "concept")!;
+  return {
+    ...g, query, hits, highlight: [...hits.map((h) => h.id), concept.id, "no-such-node"],
+    summary: `Demo: ${hits.length} results for "${query}". Best: ${hits[0].label}.`,
+  };
+}

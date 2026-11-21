@@ -1,12 +1,16 @@
 # backend/app/scene_schema.py
 """Scene DSL v1 schema: allowed kinds/props and op validation. Raises SceneError on anything unknown."""
 
+from app.scene_entity_schema import check_entity_value
+from app.scene_errors import SceneError
+from app.scene_lathe_schema import check_lathe_value
+
 MAX_OBJECTS = 5000
 MAX_ARRAY = 20000
 MAX_URL = 3_000_000
 MAX_TEXT = 4000
 
-COMMON = {"id", "kind", "pos", "rot", "scale", "color", "label", "parent", "opacity", "anim", "visible"}
+COMMON = {"id", "kind", "pos", "rot", "scale", "color", "label", "parent", "opacity", "anim", "visible", "ref"}
 KIND_PROPS: dict[str, set[str]] = {
     "box": set(),
     "sphere": set(),
@@ -27,7 +31,10 @@ KIND_PROPS: dict[str, set[str]] = {
     "surface": {"data", "fn", "res", "range", "size", "height", "color2"},
     "gltf": {"url", "fit"},
     "extrude": {"walls", "outline", "thickness", "height", "floor"},
+    "lathe": {"profile", "segments", "cap"},
     "csg": {"op", "a", "b", "hide_inputs"},
+    "entity": {"shape", "title", "subtitle", "thumb", "accent"},
+    "link": {"from", "to", "style"},
 }
 ALL_PROPS = COMMON.union(*KIND_PROPS.values())
 ANIM_TYPES = {"spin", "bob", "pulse", "orbit"}
@@ -36,7 +43,8 @@ VEC3_PROPS = {"pos", "rot", "from", "to", "offset"}
 NUMBER_PROPS = {"opacity", "head", "radius", "count", "seed", "turns", "height", "arms", "spacing",
                 "w", "h", "gap", "res", "thickness", "fit", "node_size"}
 BOOL_PROPS = {"visible", "hide_inputs", "closed", "directed", "show_values", "floor"}
-STRING_PROPS = {"op", "a", "color", "color2", "label", "parent", "target", "gen", "fn", "id", "kind", "text", "url"}
+STRING_PROPS = {"op", "a", "color", "color2", "label", "parent", "target", "gen", "fn", "id", "kind", "text", "url",
+                "shape", "title", "subtitle", "thumb", "accent", "style"}
 ARRAY_PROPS = {"b", "pts", "nodes", "edges", "values", "labels", "data", "walls", "outline", "range"}
 OP_FIELDS = {
     "add": {"op", "obj"},
@@ -46,10 +54,6 @@ OP_FIELDS = {
     "camera": {"op", "pos", "look"},
     "explode": {"op", "factor"},
 }
-
-
-class SceneError(ValueError):
-    """An op or object that the scene DSL rejects."""
 
 
 def _is_num(v: object) -> bool:
@@ -92,9 +96,9 @@ def _check_value(name: str, v: object) -> None:
         raise SceneError(f"{name} must be an array of at most {MAX_ARRAY} items")
     elif name == "anim":
         _check_anim(v)
-    if name == "url" and isinstance(v, str) and (len(v) > MAX_URL or not v.startswith(("http://", "https://", "data:", "/"))):
-        raise SceneError("url must be http(s), a data: URI or an absolute path, and under 3 MB")
-    if name in ("text", "label", "fn") and isinstance(v, str) and len(v) > MAX_TEXT:
+    if name in ("url", "thumb") and isinstance(v, str) and (len(v) > MAX_URL or not v.startswith(("http://", "https://", "data:", "/"))):
+        raise SceneError(f"{name} must be http(s), a data: URI or an absolute path, and under 3 MB")
+    if name in ("text", "label", "fn", "title", "subtitle") and isinstance(v, str) and len(v) > MAX_TEXT:
         raise SceneError(f"{name} is too long")
 
 
@@ -106,7 +110,8 @@ def check_props(kind: str | None, props: dict, *, allow_identity: bool) -> None:
     for name, v in props.items():
         if name not in allowed:
             raise SceneError(f"unknown property '{name}'" + (f" for kind '{kind}'" if kind else ""))
-        _check_value(name, v)
+        if not check_entity_value(kind, name, v) and not check_lathe_value(name, v):
+            _check_value(name, v)
 
 
 def check_obj(obj: object) -> dict:

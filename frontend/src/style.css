@@ -70,12 +70,12 @@ button:hover { background: rgba(79,216,255,.2); }
 
 #chatbtn { width: 64px; height: 64px; padding: 0; border-radius: 50%; display: grid; place-items: center;
   background: rgba(4, 18, 30, .6); box-shadow: 0 0 18px rgba(79,216,255,.25); }
-#chatbtn.on { background: rgba(79,216,255,.22); box-shadow: 0 0 22px rgba(79,216,255,.5); }
+#chatbtn.on, #deckbtn.on { background: rgba(79,216,255,.22); box-shadow: 0 0 22px rgba(79,216,255,.5); }
 #chatbadge { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px;
   border-radius: 10px; background: #ff4060; color: #fff; font-size: 11px; line-height: 20px; text-align: center;
   box-shadow: 0 0 10px rgba(255,64,96,.7); }
 #chatbadge[hidden] { display: none; }
-#membtn { width: 64px; height: 64px; padding: 0; border-radius: 50%; display: grid; place-items: center;
+#membtn, #deckbtn { width: 64px; height: 64px; padding: 0; border-radius: 50%; display: grid; place-items: center;
   background: rgba(4, 18, 30, .6); box-shadow: 0 0 18px rgba(79,216,255,.25); }
 #caption { position: fixed; left: 50%; bottom: 118px; transform: translateX(-50%); z-index: 4; max-width: min(720px, 80vw);
   padding: 6px 14px; border-radius: 8px; text-align: center; color: #d8f6ff; pointer-events: none;

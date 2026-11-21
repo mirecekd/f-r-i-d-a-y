@@ -21,6 +21,7 @@ export interface Obj {
   parent?: string;
   opacity?: number;
   visible?: boolean;
+  ref?: { type: "image" | "file" | "model" | "memory" | "tool"; id: string };
   anim?: Anim | Anim[] | null;
   [k: string]: unknown;
 }
