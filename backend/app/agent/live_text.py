@@ -11,9 +11,10 @@ from google.genai import errors, types
 
 from app.agent.llm import OnDelta
 from app.agent.loop import MAX_ROUNDS, Emit, run_tool
-from app.agent.prompt import CHAT_PROMPT
-from app.voice.session import LANGUAGE
+from app.agent.prompt import chat_prompt
+from app.voice.language import current_language, speech_language
 from app.voice.tools import Tool, ToolRegistry
+from app.voice.voices import current_voice
 
 log = logging.getLogger("friday.agent.live_text")
 
@@ -29,15 +30,21 @@ def seed_turns(history: list[dict[str, Any]]) -> list[types.Content]:
     return turns
 
 
+def _speech(model: str, language: str) -> types.SpeechConfig:
+    voice = types.VoiceConfig(prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=current_voice(model)))
+    return types.SpeechConfig(voice_config=voice, language_code=speech_language(model, language))
+
+
 def build_config(model: str, tools: dict[str, Tool]) -> types.LiveConnectConfig:
     audio = model in AUDIO_ONLY
+    language = current_language()
     plain = {n: replace(t, long=False) for n, t in tools.items()}  # no NON_BLOCKING semantics in text
     return types.LiveConnectConfig(
         response_modalities=[types.Modality.AUDIO if audio else types.Modality.TEXT],
-        system_instruction=CHAT_PROMPT,
+        system_instruction=chat_prompt(language),
         tools=ToolRegistry(plain).tool_config(),  # pyright: ignore[reportArgumentType]
         output_audio_transcription=types.AudioTranscriptionConfig() if audio else None,
-        speech_config=types.SpeechConfig(language_code=LANGUAGE) if audio else None,
+        speech_config=_speech(model, language) if audio else None,
     )
 
 

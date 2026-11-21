@@ -36,6 +36,8 @@ KEY_PATTERNS = [
     r"(?i)(?:KEY|TOKEN|SECRET)\w*\s*[=:]\s*[\"']?[A-Za-z0-9+/_-]{32,}",
 ]
 
+PUBLIC_AUTHOR_EMAIL = "mirecekd@gmail.com"  # the one address printed in the README author section
+
 PRIVATE_PATH = re.compile(r"(^|/)(\.env|\.private-words)$|(^|/)(memory-bank|\.briefs|data)/|\.log$")
 SKIP_CONTENT = re.compile(r"(^|/)package-lock\.json$")
 
@@ -51,7 +53,8 @@ def word_patterns() -> list[re.Pattern[str]]:
 def scan_lines(lines: list[str], patterns: list[re.Pattern[str]]) -> list[tuple[int, str]]:
     """(line number, category) for each line that matches; the matched text is never returned."""
     hits = []
-    for number, line in enumerate(lines, 1):
+    for number, raw in enumerate(lines, 1):
+        line = raw.replace(PUBLIC_AUTHOR_EMAIL, "")
         for index, pattern in enumerate(patterns):
             if pattern.search(line):
                 hits.append((number, "key-like string" if index >= len(patterns) - len(KEY_PATTERNS) else "sensitive word"))

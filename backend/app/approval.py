@@ -43,6 +43,10 @@ class Approvals:
         self._pending: dict[str, tuple[str, asyncio.Future[bool]]] = {}  # id -> (tool, answer)
         self._allowed: set[str] = set()  # tool names allowed for the rest of this connection
 
+    @property
+    def pending(self) -> int:
+        return len(self._pending)
+
     async def ask(self, tool: str, summary: str, args: dict[str, Any], timeout: float = DEFAULT_TIMEOUT_S) -> bool:
         if tool in self._allowed:
             return True
@@ -92,6 +96,17 @@ class Approvals:
 
     def close(self) -> None:
         """Connection ended: every open question is denied."""
+        self._deny_pending()
+
+    async def deny_all(self) -> int:
+        """User STOP: deny every open question and tell the browser to drop its prompts."""
+        ids = list(self._pending)
+        self._deny_pending()
+        for request_id in ids:
+            await self._close_prompt(request_id, "stopped")
+        return len(ids)
+
+    def _deny_pending(self) -> None:
         for _tool, future in self._pending.values():
             if not future.done():
                 future.set_result(False)

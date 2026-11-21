@@ -1,36 +1,59 @@
+<img src="https://capsule-render.vercel.app/api?type=waving&height=200&color=0:02060c,55:0a1a24,100:4fd8ff&text=F.R.I.D.A.Y.&fontColor=cfefff&fontSize=58&fontAlignY=38&desc=Voice%20and%20visual%20assistant%20%C2%B7%20live%203D%20%C2%B7%20tools&descSize=20&descColor=4fd8ff&descAlignY=60" width="100%" alt="" />
+
 <div align="center">
 
-# F.R.I.D.A.Y.
+[![Python](https://img.shields.io/badge/Python-3.12-4fd8ff?style=for-the-badge&logo=python&logoColor=4fd8ff&labelColor=0a1a24)](https://www.python.org/)
+[![Three.js](https://img.shields.io/badge/Three.js-WebGL-4fd8ff?style=for-the-badge&logo=threedotjs&logoColor=4fd8ff&labelColor=0a1a24)](https://threejs.org/)
+[![Gemini Live](https://img.shields.io/badge/Gemini-Live-4fd8ff?style=for-the-badge&logo=googlegemini&logoColor=4fd8ff&labelColor=0a1a24)](https://ai.google.dev/gemini-api/docs/live)
+[![FastAPI](https://img.shields.io/badge/FastAPI-backend-4fd8ff?style=for-the-badge&logo=fastapi&logoColor=4fd8ff&labelColor=0a1a24)](https://fastapi.tiangolo.com/)
+[![License MIT](https://img.shields.io/badge/License-MIT-4fd8ff?style=for-the-badge&labelColor=0a1a24)](LICENSE)
+[![Tests](https://img.shields.io/github/actions/workflow/status/mirecekd/f-r-i-d-a-y/tests.yml?branch=main&style=for-the-badge&label=TESTS&color=4fd8ff&labelColor=0a1a24)](https://github.com/mirecekd/f-r-i-d-a-y/actions)
+[![Release](https://img.shields.io/github/v/release/mirecekd/f-r-i-d-a-y?style=for-the-badge&label=RELEASE&color=4fd8ff&labelColor=0a1a24)](https://github.com/mirecekd/f-r-i-d-a-y/releases)
 
-**A voice-first assistant with a 3D holographic workspace.**
+[![Buy Me a Beer](https://img.shields.io/badge/If%20you%20like%20my%20work%20you%20can-Buy%20Me%20a%20Beer-4fd8ff?style=for-the-badge&labelColor=0a1a24)](https://buymeacoffee.com/mirecekd)
 
 [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/mirecekd) [![PayPal.me](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?business=LJ5ZF7Q9KMTRW&no_recurring=0&currency_code=USD)
 
 </div>
 
-## What is it?
+## 🚀 What is F.R.I.D.A.Y.?
 
-F.R.I.D.A.Y. is a self-hosted web app: you talk to it (Gemini Live), and it answers by voice while drawing on a 3D scene,
-building parametric models, showing rich panels (charts, maps, diagrams, code, images) and, optionally, tapping into
-your memory service, MCP tools and an agent backend. It runs in the browser, on a desktop or a tablet.
+A self-hosted web app: you talk to it (Gemini Live), and it answers by voice while drawing on a shared 3D scene, building parametric models and showing rich panels (charts, maps, diagrams, code, images). Optionally it taps into your memory service, MCP tools and an agent backend. It runs in the browser, on a desktop or a tablet, and a round STOP button (or Esc) halts everything at once.
 
-## Features
+## 🧠 How it works?
 
-- **Voice** through Gemini Live: barge-in, long-running tools that do not block the conversation, session resumption.
+### 1. Listen
+- You speak into the browser; the audio streams to Gemini Live. You pick the voice and the spoken language in the settings panel. Speaking over the answer interrupts it (barge-in), and a camera or screen share lets Friday see what you see.
+
+### 2. Think
+- The model answers and calls tools: the 3D scene DSL, parametric models, view panels, web search, memory, MCP servers. Long jobs such as `draw` run in the background and do not block the conversation. Risky tools wait for your approval.
+
+### 3. Show and tell
+- The scene, panels and memory orbs appear in the browser while Friday talks. STOP cancels running tools, agent turns, pending approvals and the voice session, and the button pulses amber while anything is running.
+
+## ✨ Features
+
+- **Voice** through Gemini Live with a selectable voice and language: barge-in, long-running tools that do not block the conversation, session resumption.
+- **STOP button** (and Esc): stops playback, microphone, capture, zoom mode and every running tool or agent turn.
 - **3D scene DSL**: the model draws primitives, groups, CSG and glTF objects, and the scene is streamed to the browser.
 - **Parametric models** with undo/redo, bounds and measurements, plus packs: `pcb`, `enclosure`, `building`.
 - **Rich view panels**: markdown, code, JSON, charts, diagrams, maps, images with EXIF.
 - **Image awareness**: drop or paste an image, the model can look at it and talk about it.
-- **Memory orbs**: an optional memory service is shown as a graph of orbs you can filter and open.
+- **Memory orbs**: an optional memory service is shown as a graph of orbs you can filter and search.
 - **MCP client**: connect streamable-HTTP/SSE MCP servers with an allow-list and per-tool policies.
 - **Web search** through Gemini grounding.
 - **Approval flow**: risky tools (writes, remote agents) wait for your confirmation.
 - **Touch and tablet** friendly, with **zoom by drawing** a rectangle on the scene.
+- **Settings panel** for the voice, the language and the models of the agent and chat roles.
 
 Only `GEMINI_API_KEY` is required. The memory service, LiteLLM, MCP servers and the Hermes agent are **optional**:
 each is switched on by its environment variables and is simply absent when they are not set.
 
-## Architecture
+## 🛠️ Technology Stack
+
+Python 3.12, FastAPI, the Google GenAI SDK (Gemini Live), TypeScript, Vite, three.js, Docker. Optional: a memory service, MCP servers, LiteLLM, Hermes.
+
+## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
@@ -52,7 +75,7 @@ Browser  <--ws-->  backend (FastAPI)  <--->  Gemini Live
 The wire protocol is documented in [docs/protocol.md](docs/protocol.md), the gestures in
 [docs/ui-gestures.md](docs/ui-gestures.md).
 
-## Quickstart
+## ⚙️ Setup
 
 ```sh
 cp .env.example .env        # set GEMINI_API_KEY
@@ -63,7 +86,7 @@ docker compose up -d --build
 More in [QUICKSTART.md](QUICKSTART.md). The prebuilt multi-arch image (amd64, arm64) is
 `ghcr.io/mirecekd/f-r-i-d-a-y:latest`.
 
-## Configuration
+## 🔧 Configuration
 
 All settings are environment variables, see [.env.example](.env.example).
 
@@ -85,7 +108,7 @@ All settings are environment variables, see [.env.example](.env.example).
 | `FRIDAY_DEMO` | `0` | `1` enables demo scenes (development) |
 | `FRIDAY_VERSION` | `__version__` | Version override, set by the Docker build |
 
-## Security
+## 🔒 Security
 
 - **There is no authentication built in.** Anyone who can reach the port can use your Gemini key and every enabled tool.
 - Put it behind a reverse proxy with SSO or at least basic auth and TLS. The compose file binds to `127.0.0.1` only.
@@ -93,7 +116,7 @@ All settings are environment variables, see [.env.example](.env.example).
 - Risky tools need an explicit approval click; MCP tools are allow-listed one by one.
 - `scripts/pre-commit` refuses commits with private files or key-like strings (see Development).
 
-## Versioning and releases
+## 🧭 Versioning and releases
 
 Versions look like `YYYYMMDD.X` (build day and the counter of that day). `backend/app/__init__.py` holds
 `__version__`; `/health` and the WebSocket `hello` message report it (`FRIDAY_VERSION` overrides it in the container).
@@ -107,7 +130,7 @@ Every push to `main` runs the tests; when they pass, the `Release` workflow comp
 and a GitHub Release with generated notes, and pushes `ghcr.io/mirecekd/f-r-i-d-a-y:<version>` and `:latest`
 (linux/amd64 and linux/arm64). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
-## Development
+## 🧪 Development
 
 ```sh
 sh scripts/install-hooks.sh                         # privacy pre-commit hook
@@ -121,7 +144,7 @@ python scripts/privacy_scan.py --tree               # the CI privacy check
 
 Run the backend alone with `uvicorn app.main:app --port 8670` from `backend/`.
 
-## Support
+## ☕ Support
 
 <div align="center">
 
@@ -129,6 +152,12 @@ Run the backend alone with `uvicorn app.main:app --port 8670` from `backend/`.
 
 </div>
 
-## License
+## 📄 License
 
-MIT, see [LICENSE](LICENSE). (c) 2026 Miroslav Dvorak.
+MIT License - see the `LICENSE` file for details.
+
+## 👤 Author
+
+Miroslav Dvorak - mirecekd@gmail.com
+
+<img src="https://capsule-render.vercel.app/api?type=waving&height=110&section=footer&color=0:4fd8ff,55:0a1a24,100:02060c" width="100%" alt="" />

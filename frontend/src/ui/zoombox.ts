@@ -68,6 +68,11 @@ export class ZoomBox {
     (window as any).__zoombox = this;
   }
 
+  /** STOP: leave zoom-by-drawing mode and drop a stroke in progress. */
+  exit(): void {
+    this.setOn(false);
+  }
+
   private current(): View {
     return { pos: this.stage.camera.position.clone(), look: this.stage.controls.target.clone() };
   }

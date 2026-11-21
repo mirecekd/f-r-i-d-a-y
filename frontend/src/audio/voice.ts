@@ -29,6 +29,17 @@ export class Voice {
     return this.on;
   }
 
+  /** Audio chunks still queued for playback. */
+  get queued(): number {
+    return this.player.queued();
+  }
+
+  /** STOP: end the session locally (the server is told with `stop`), drop all queued audio. */
+  halt(): void {
+    if (this.on) this.stop(false);
+    this.player.flush();
+  }
+
   /** Output loudness 0..1 for the orb. */
   level(): number {
     return this.player.level();

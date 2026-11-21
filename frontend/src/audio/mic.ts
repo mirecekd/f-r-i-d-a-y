@@ -9,7 +9,7 @@ export class Mic {
   /** Starts capture; must be called from a user gesture. Rejects if the mic is denied. */
   async start(onChunk: (pcm: ArrayBuffer) => void): Promise<void> {
     this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      audio: { channelCount: 1, sampleRate: 48000, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       video: false,
     });
     this.ctx = new AudioContext();

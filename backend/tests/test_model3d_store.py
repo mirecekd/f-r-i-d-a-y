@@ -63,3 +63,11 @@ def test_named_snapshot_restore(tmp_path):
     assert s.undo("m").parts.keys() == {"a", "b"}
     with pytest.raises(ModelError):
         s.restore("m", "nope")
+
+
+def test_corrupt_model_file_is_a_model_error(tmp_path):
+    store = ModelStore(tmp_path)
+    store.create("board")
+    store._path("board").write_text("{not json", encoding="utf-8")
+    with pytest.raises(ModelError, match="cannot read model"):
+        store.load("board")

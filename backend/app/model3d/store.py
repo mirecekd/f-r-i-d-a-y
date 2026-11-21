@@ -49,6 +49,7 @@ class ModelStore:
 
     def create(self, model_id: str, units: str = "mm", scale_to_scene: float | None = None) -> Model:
         from app.model3d.model import UNIT_SCALE
+
         model_id = norm_id(model_id)
         if self.exists(model_id):
             raise ModelError(f"model '{model_id}' already exists")
@@ -61,7 +62,10 @@ class ModelStore:
         path = self._path(model_id)
         if not path.is_file():
             raise ModelError(f"unknown model '{model_id}'; known: {self.list()}")
-        return Model.from_dict(json.loads(path.read_text(encoding="utf-8")))
+        try:
+            return Model.from_dict(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, ValueError) as e:  # unreadable or corrupt file: tools report it instead of crashing
+            raise ModelError(f"cannot read model '{model_id}': {e}") from e
 
     def save(self, model: Model) -> None:
         model.validate()

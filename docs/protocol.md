@@ -18,11 +18,13 @@ Authentication is not built in: a reverse proxy in front of the app handles it; 
 | `scene` | `ops`: Op[] | scene patch (see below) |
 | `scene_full` | `objects`: Obj[] | full replacement, sent on connect |
 | `interrupted` | | barge-in: the browser drops queued playback |
+| `stopped` | `cancelled` | answer to `stop`: names of what was cancelled (`draw`, `chat`, `voice`, ...), empty when idle |
+| `busy` | `busy`, `count` | sent when the number of running things (voice, long tools, chat turns, open approvals) changes |
 | `view` | `id`, `kind`, `title?`, `data` | rich floating panel, see "View panels" below; re-sending an `id` replaces the panel |
 | `view_close` | `id` | close a panel |
 | `notice` | `text` | informational, e.g. `reconnecting` while the Live session resumes after GoAway or a drop |
 | `usage` | `prompt?`, `response?`, `thoughts?`, `total?` | token counts reported by Gemini Live |
-| `models` | `catalog`: {id, provider, label, group}[], `pinned`: {agent_model, chat_model} | model catalog and pinned choices, see "Models"; sent on connect and echoed after `set_model` |
+| `models` | `catalog`: {id, provider, label, group}[], `pinned`: {agent_model, chat_model}, `language`, `languages`: {code, label}[], `voice`, `voices`: {id, label, gender, style}[] | model catalog, pinned choices, language and voices of the pinned chat model, see "Models"; sent on connect and echoed after `set_model`, `set_language` and `set_voice` |
 | `confirm_request` | `id`, `tool`, `summary`, `args`, `expires_in` | a risky tool wants to run; the browser must answer with `confirm` within `expires_in` seconds; `args` is truncated and values under keys matching `key\|token\|secret\|password` are `***` |
 | `confirm_closed` | `id`, `reason`: `timeout\|cancelled` | the question is over without an answer (timeout counts as deny); drop the prompt |
 | `image_ready` | `id`, `client_id?`, `url`, `w`, `h`, `exif` | an uploaded image is stored; see "Images" |
@@ -39,10 +41,13 @@ while they run, and `tool ok|error` when done; the model announces the late resu
 | `chat` | `text`, `attachments?` | typed message |
 | `voice_start` | | open a Gemini Live session; binary PCM16 16 kHz frames are then forwarded to it |
 | `voice_stop` | | close the Live session |
+| `stop` | | STOP button / Esc: cancel long tools, agent turns and approvals (denied), end the voice session, back to `idle`; the socket stays open; server replies `stopped` and `notice` "Zastaveno" |
 | `select` | `ids`: string[] | scene selection, so "make this bigger" resolves |
 | `image_upload` | `id?`, `name`, `mime`, `data_b64`, `analyze?` | upload one image (<= 12 MB decoded, jpeg/png/webp/gif); see "Images" |
 | `image_to_scene` | `id` | add the stored image to the 3D scene (same as the `show_in_scene` tool); unknown id answers `error` |
 | `set_model` | `role`: `agent\|chat`, `model`: catalog id | pin a model (persisted), server echoes `models` |
+| `set_language` | `language`: code from `languages` | pin the conversation language (persisted), server echoes `models`; unknown code answers `error` |
+| `set_voice` | `voice`: id from `voices` | pin the voice of the current chat model (persisted per model), server echoes `models`; a voice the model does not offer answers `error` |
 | `confirm` | `id`, `allow`: bool, `remember?`: `once\|session` | answer to `confirm_request`; `session` remembers an allow for that tool name on this connection only |
 | `frame` | `source`: `camera\|screen`, `mime`: `image/jpeg`, `data_b64` | one live vision frame for the model, see "Live vision input" |
 | `frames_stop` | | the browser stopped streaming frames |
@@ -152,6 +157,34 @@ plus LiteLLM chat models (`GET {LITELLM_BASE_URL}/models`, ids containing `embed
 `nova-2-multimodal` dropped), provider `litellm`, group = vendor prefix of the id (`anthropic`, `openai`, ...) and
 label `name (region)`. `set_model` with an id missing from the catalog answers `error`. Without a pin the defaults are
 `FRIDAY_AGENT_MODEL` / `FRIDAY_CHAT_MODEL`, then `gemini-flash-latest`.
+
+### Language and voice
+
+`prefs.json` additionally holds `language` (default `cs-CZ`, fallback env `GEMINI_LANGUAGE`; also `en-US`, `sk-SK`,
+`de-DE`, `pl-PL`, `es-ES`, `fr-FR`, `it-IT`, `uk-UA`) and `voice` (a map model id -> prebuilt voice id). Both are read
+at every Live session start: `speech_config.language_code`, the voice, the system prompt (Czech persona for `cs-CZ`,
+otherwise a first line "Answer in X unless the user switches language") and `input_audio_transcription.language_codes`.
+Text chat uses the same language. Changing the chat model re-sends `models` with that model's voices; a pinned voice
+that the new model does not offer falls back to the default voice (Kore, a female voice, documented as "firm";
+`GEMINI_VOICE` overrides the default). When a voice session is active a language, voice or chat-model change is answered
+with a `notice` ("applies to the next voice session"); the session is not restarted.
+
+Probed against the real API (Live turn with audio out, all 30 prebuilt voices): every voice connects on
+`gemini-3.8-live` and `gemini-2.5-flash-native-audio-latest`, so `voices_for(model)` returns all 30 for every model
+(override table `MODEL_VOICES` in `app/voice/voices.py`). The native-audio models reject `cs-CZ`, `sk-SK` and `es-ES`
+(close 1007 "Unsupported language code"); for them the code is omitted from `speech_config` and the model follows the
+prompt. `gemini-3.8-live-extended-thinking` needs a thinking level and does not connect with this config.
+
+### Czech recognition
+
+- Mic capture downsamples with a windowed-sinc low-pass (cutoff 7.2 kHz) before decimation to 16 kHz, so 48 kHz and
+  44.1 kHz input does not alias (`frontend/src/audio/resample.js`, check: `node frontend/tests/resample.mjs`).
+- Turn detection (`realtime_input_config.automatic_activity_detection`) env constants: `FRIDAY_VAD_SILENCE_MS` (700),
+  `FRIDAY_VAD_PREFIX_MS` (200), `FRIDAY_VAD_START` and `FRIDAY_VAD_END` (`low` or `high`, default `low`). Longer
+  silence avoids cutting Czech sentences at mid-sentence pauses; lower the values for snappier turns.
+- Also affecting recognition: a headset microphone close to the mouth beats laptop speakers and microphone (echo,
+  room noise); browser echo cancellation is on and works best with a headset. Quality can only be judged by ear on the
+  real device.
 
 ## Approval
 

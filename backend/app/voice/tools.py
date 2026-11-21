@@ -101,7 +101,7 @@ class ToolRunner:
             if tool is None:
                 blocking.append(self._response(call, {"error": f"unknown tool {call.name}"}))
             elif tool.long:
-                task = asyncio.create_task(self._run_long(tool, call))
+                task = asyncio.create_task(self._run_long(tool, call), name=tool.name)
                 self.long_running.add(task)
                 task.add_done_callback(self.long_running.discard)
                 if call.id:
@@ -113,6 +113,13 @@ class ToolRunner:
                 blocking.append(self._response(call, response))
         if blocking:
             await self.session.send_tool_response(function_responses=blocking)
+
+    async def stop_all(self) -> list[str]:
+        """User STOP: cancel every running long tool, report each as failed to the browser, return their names."""
+        names = [t.get_name() for t in self.long_running if not t.done()]
+        await self.cancel(list(self._tasks_by_call))
+        await self.cancel_all()
+        return names
 
     async def cancel_all(self) -> None:
         for task in list(self.long_running):

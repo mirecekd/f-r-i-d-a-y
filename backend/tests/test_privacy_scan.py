@@ -32,3 +32,11 @@ def test_private_paths_are_refused():
 def test_tracked_tree_is_clean():
     scan = load_scan()
     assert scan.scan_tree(scan.word_patterns()) == []
+
+
+def test_public_author_email_is_allowed_but_other_addresses_are_not():
+    scan = load_scan()
+    patterns = scan.word_patterns()
+    at = "@" + "gmail.com"
+    assert scan.scan_lines(["Author - " + scan.PUBLIC_AUTHOR_EMAIL], patterns) == []
+    assert scan.scan_lines(["someone" + at], patterns) == [(1, "sensitive word")]

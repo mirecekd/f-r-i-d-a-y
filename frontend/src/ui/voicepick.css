@@ -1,0 +1,8 @@
+/* frontend/src/ui/voicepick.css */
+.vp-wrap { flex-wrap: wrap; }
+.vp-wrap .mp-btn { min-width: 140px; }
+.vp-opt { display: flex; align-items: center; gap: 8px; }
+.vp-mark { width: 1.2em; text-align: center; color: var(--c); }
+.vp-label { flex: 1; }
+.vp-hint { font-size: 11px; color: var(--dim); white-space: nowrap; }
+.vp-wrap .mp-pop { max-height: 50vh; min-width: 240px; }

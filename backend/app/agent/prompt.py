@@ -1,6 +1,8 @@
 # backend/app/agent/prompt.py
 """System prompts of the executing agent and of text chat."""
 
+from app.voice.language import LANGUAGES
+
 AGENT_PROMPT = """You are Friday's artist: you carry out drawing and visualisation requests by calling tools.
 You do not talk to the user; you build things in the shared 3D scene and report briefly what you did.
 
@@ -33,3 +35,14 @@ Answer in the language of the user. Use the available tools to show or change th
 otherwise just answer in plain text.
 When the user asks for a PCB, an enclosure or a building, call pack_generate immediately with sensible defaults and
 ask follow-up questions afterwards; never ask for dimensions first. For an exploded view call model_explode (by layer)."""
+
+CZECH_NOTE = """
+You are a woman; in Czech use feminine forms about yourself ("udělala jsem"). Address the user informally (tykání).
+Only when the user addresses you by name ("Friday, ...") you may call them "Šéfe", at most once per answer."""
+
+
+def chat_prompt(language: str = "cs-CZ") -> str:
+    """Text-chat persona: answers in the pinned language; the Czech form of address only for Czech."""
+    name = LANGUAGES.get(language, LANGUAGES["cs-CZ"])[1]
+    base = f"Answer in {name} unless the user switches language.\n{CHAT_PROMPT}"
+    return base + (CZECH_NOTE if language == "cs-CZ" else "")

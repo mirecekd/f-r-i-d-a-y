@@ -52,6 +52,13 @@ class VoiceBridge:
     def active(self) -> bool:
         return self._task is not None and not self._task.done()
 
+    @property
+    def running_tools(self) -> int:
+        return len(self._runner.long_running)
+
+    async def stop_tools(self) -> list[str]:
+        return await self._runner.stop_all()
+
     async def start(self) -> None:
         if self.active:
             return

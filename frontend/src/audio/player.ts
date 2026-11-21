@@ -44,6 +44,10 @@ export class Player {
     this.playhead = 0;
   }
 
+  queued(): number {
+    return this.sources.size;
+  }
+
   /** Output loudness 0..1 (RMS of the analyser), for orb.level. */
   level(): number {
     if (!this.analyser || this.sources.size === 0) return 0;

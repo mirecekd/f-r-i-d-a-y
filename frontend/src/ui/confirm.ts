@@ -45,6 +45,13 @@ export class Confirm {
     if (!this.cur) this.next();
   }
 
+  /** STOP: deny the open dialog and every queued request. */
+  denyAll(): void {
+    for (const r of [...(this.cur ? [this.cur.req] : []), ...this.queue]) this.net.send({ t: "confirm", id: r.id, allow: false });
+    this.queue = [];
+    this.dismiss();
+  }
+
   private closed(id: string): void {
     this.queue = this.queue.filter((r) => r.id !== id);
     if (this.cur?.req.id === id) this.dismiss();

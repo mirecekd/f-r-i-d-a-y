@@ -14,10 +14,12 @@ import { glideStep } from "./core/glide";
 import { wireTouchMenu } from "./ui/touchmenu";
 import { Models } from "./ui/models";
 import { Settings } from "./ui/settings";
+import { VoicePick } from "./ui/voicepick";
 import { Confirm } from "./ui/confirm";
 import { Capture } from "./ui/capture";
 import { ImageDrop } from "./ui/imagedrop";
 import { ZoomBox } from "./ui/zoombox";
+import { StopButton } from "./ui/stopbutton";
 import { demoGraph } from "./views/memory_demo";
 
 const stage = new Stage(document.getElementById("stage") as HTMLCanvasElement);
@@ -37,7 +39,7 @@ stage.onTick((dt) => {
   if (!glideStep(camGoal, stage.camera, stage.controls.target, dt)) camGoal = null;
 });
 
-new ZoomBox(stage, player, (pos, look) => (camGoal = { pos, look }));
+const zoom = new ZoomBox(stage, player, (pos, look) => (camGoal = { pos, look }));
 
 const net = new Net();
 player.onSelect = (ids) => net.send({ t: "select", ids });
@@ -46,9 +48,11 @@ const chat = new Chat(net);
 new ImageDrop(net, chat);
 const settings = new Settings(net, document.getElementById("settingsbtn")!);
 new Models(net, settings.section("Modely"));
-new Confirm(net);
+new VoicePick(net, settings.section("Hlas a jazyk"));
+const confirm = new Confirm(net);
 const voice = new Voice(net, document.getElementById("mic")!);
-new Capture(net, voice);
+const capture = new Capture(net, voice);
+new StopButton(net, document.getElementById("stopbtn")!, { voice, capture, zoom, confirm });
 document.getElementById("membtn")!.onclick = () => net.send({ t: "show_memory_graph" });
 stage.onTick(() => (orb.level = voice.level()));
 const setState = (s: OrbState): void => miniOrb.setState(s);
@@ -72,4 +76,4 @@ net.on((m) => {
 if (!params.offline) net.connect();
 
 // Debug hook for headless screenshot tests: window.__friday.state("speaking")
-(window as any).__friday = { state: setState, offline: (v: boolean) => miniOrb.setOffline(v), level: (v: number) => (orb.level = v), player, views, camera: stage.camera, voiceActive: (on: boolean) => voice.onActive(on), send: (m: { t: string }) => net.send(m), emit: (m: { t: string }) => net.emit(m), chat: (r: string, t: string) => chat.message(r, t), tool: (id: string, n: string, s: string, ms?: number) => chat.tool(id, n, s, ms), memoryDemo: (n = 150) => views.show({ id: "memdemo", kind: "memory_graph", title: "Memory orbs (demo)", data: demoGraph(n) }) };
+(window as any).__friday = { state: setState, offline: (v: boolean) => miniOrb.setOffline(v), level: (v: number) => (orb.level = v), player, views, voice, camera: stage.camera, voiceActive: (on: boolean) => voice.onActive(on), send: (m: { t: string }) => net.send(m), emit: (m: { t: string }) => net.emit(m), chat: (r: string, t: string) => chat.message(r, t), tool: (id: string, n: string, s: string, ms?: number) => chat.tool(id, n, s, ms), memoryDemo: (n = 150) => views.show({ id: "memdemo", kind: "memory_graph", title: "Memory orbs (demo)", data: demoGraph(n) }) };

@@ -75,6 +75,7 @@ def test_startup_context_fits_budget_and_skips_when_down(server):
 
 
 def test_system_prompt_fences_briefing():
-    assert live.system_prompt() == live.SYSTEM_PROMPT
-    fenced = live.system_prompt("Last 24h")
-    assert fenced.startswith(live.SYSTEM_PROMPT) and "<memory-data>\nLast 24h\n</memory-data>" in fenced
+    plain = live.system_prompt(language="cs-CZ")
+    assert plain.startswith("Jsi Friday")
+    fenced = live.system_prompt("Last 24h", "cs-CZ")
+    assert fenced.startswith(plain) and "<memory-data>\nLast 24h\n</memory-data>" in fenced

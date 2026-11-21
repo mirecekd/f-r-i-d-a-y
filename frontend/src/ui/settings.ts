@@ -49,7 +49,7 @@ export class Settings {
     const about = this.section("O aplikaci");
     const ver = el("p", "st-note", "Verze: ");
     ver.append(this.version);
-    about.append(ver, el("p", "st-note", "Podrobna konfigurace se cte z lokalniho souboru namountovaneho do kontejneru; ve webovem rozhrani se needituje."));
+    about.append(ver);
   }
 
   toggle(): void {

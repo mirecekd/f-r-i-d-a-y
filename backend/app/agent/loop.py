@@ -1,6 +1,7 @@
 # backend/app/agent/loop.py
 """Tool-calling loop: ask the model, run the tools it requests, feed results back, repeat (max 8 rounds)."""
 
+import asyncio
 import json
 import logging
 import time
@@ -35,6 +36,9 @@ async def run_tool(tools: dict[str, Tool], call: dict, emit: Emit) -> str:
             raise KeyError(f"unknown tool {call['name']}")
         result = json.dumps(await tool.handler(call["args"]), default=str)
         status = "ok"
+    except asyncio.CancelledError:
+        await emit({"t": "tool", "id": call["id"], "name": call["name"], "status": "error"})
+        raise
     except Exception as e:
         log.warning("agent tool %s failed: %s", call["name"], e)
         result, status = json.dumps({"error": f"{type(e).__name__}: {e}"}), "error"

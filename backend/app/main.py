@@ -17,6 +17,7 @@ from app.memory.handlers import memory_search, show_memory_graph
 from app.memory.warm import lifespan
 from app.scene import SceneStore
 from app.scene_demo import DEMO_CAMERA, demo_objects
+from app.stop import StopController
 from app.views_demo import sample_views
 from app.vision import router as vision_router
 from app.voice import ToolRegistry, VoiceBridge
@@ -49,6 +50,8 @@ async def ws_endpoint(ws: WebSocket):
     agent = AgentSession(scene, ws.send_json, tool_registry)
     await agent.send_models()
     voice = VoiceBridge(ws.send_json, ws.send_bytes, agent.registry, agent.approvals)
+    stopper = StopController(ws.send_json, agent, voice)
+    stopper.start_monitor()
     try:
         while True:
             frame = await ws.receive()
@@ -58,18 +61,21 @@ async def ws_endpoint(ws: WebSocket):
                 if voice.active:
                     await voice.send_audio(frame["bytes"])
             elif frame.get("text"):
-                await handle(ws, json.loads(frame["text"]), voice, agent)
+                await handle(ws, json.loads(frame["text"]), voice, agent, stopper)
     except WebSocketDisconnect:
         pass
     finally:
+        await stopper.close()
         await voice.stop()
         await agent.close()
 
 
-async def handle(ws: WebSocket, msg: dict, voice: VoiceBridge, agent: AgentSession) -> None:
+async def handle(ws: WebSocket, msg: dict, voice: VoiceBridge, agent: AgentSession, stopper: StopController) -> None:
     kind = msg.get("t")
     if kind == "ping":
         await ws.send_json({"t": "pong"})
+    elif kind == "stop":
+        await stopper.stop()
     elif kind == "voice_start":
         await voice.start()
     elif kind == "voice_stop":
@@ -87,7 +93,11 @@ async def handle(ws: WebSocket, msg: dict, voice: VoiceBridge, agent: AgentSessi
     elif kind == "image_to_scene":
         await agent.vision.on_image_to_scene(msg)
     elif kind == "set_model":
-        await agent.set_model(msg)
+        await agent.set_model(msg, voice.active)
+    elif kind == "set_language":
+        await agent.set_language(msg, voice.active)
+    elif kind == "set_voice":
+        await agent.set_voice(msg, voice.active)
     elif kind == "demo" and os.getenv("FRIDAY_DEMO") == "1" and msg.get("what") == "views":
         for v in sample_views():
             await ws.send_json(v)

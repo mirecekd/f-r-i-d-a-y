@@ -13,7 +13,8 @@ from app.agent import live_text, prefs
 from app.agent.catalog import catalog
 from app.agent.draw import make_draw_tool
 from app.agent.loop import Emit, run_agent
-from app.agent.prompt import CHAT_PROMPT
+from app.agent.prompt import chat_prompt
+from app.agent.voice_settings import NEXT_SESSION_NOTICE, apply_language, apply_voice, models_fields
 from app.approval import Approvals
 from app.mcp import register_mcp_tools
 from app.memory.tools import register_memory_tools
@@ -22,6 +23,7 @@ from app.scene import SceneStore
 from app.tools_friday import Ctx, register_all
 from app.tools_friday.search import register_search_tool
 from app.vision import register_vision_tools
+from app.voice.language import current_language
 from app.voice.session import live_model
 from app.voice.tools import Tool, ToolRegistry
 
@@ -55,7 +57,7 @@ class AgentSession:
         self.registry.register(
             make_draw_tool(lambda: pinned_model("agent"), self.worker_tools, emit)
         )
-        self.history: list[dict[str, Any]] = [{"role": "system", "content": CHAT_PROMPT}]
+        self.history: list[dict[str, Any]] = [{"role": "system", "content": chat_prompt(current_language())}]
         self._chats: set[asyncio.Task] = set()
         self._lock = asyncio.Lock()
 
@@ -82,10 +84,29 @@ class AgentSession:
                 "t": "models",
                 "catalog": await catalog.get(),
                 "pinned": {"agent_model": pinned_model("agent"), "chat_model": pinned_model("chat")},
+                **models_fields(pinned_model("chat")),
             }
         )
 
-    async def set_model(self, msg: dict) -> None:
+    async def set_language(self, msg: dict, voice_active: bool = False) -> None:
+        error = apply_language(msg)
+        if error:
+            return await self.emit({"t": "error", "message": error})
+        self.history[0] = {"role": "system", "content": chat_prompt(current_language())}
+        await self._changed(voice_active)
+
+    async def set_voice(self, msg: dict, voice_active: bool = False) -> None:
+        error = apply_voice(pinned_model("chat"), msg)
+        if error:
+            return await self.emit({"t": "error", "message": error})
+        await self._changed(voice_active)
+
+    async def _changed(self, voice_active: bool) -> None:
+        await self.send_models()
+        if voice_active:
+            await self.emit({"t": "notice", "text": NEXT_SESSION_NOTICE})
+
+    async def set_model(self, msg: dict, voice_active: bool = False) -> None:
         role, model = msg.get("role"), str(msg.get("model", ""))
         await catalog.get()
         if role not in prefs.ROLES:
@@ -96,13 +117,25 @@ class AgentSession:
             await self.emit({"t": "error", "message": f"set_model: model {model} is not available for role {role}"})
         else:
             prefs.save_model(role, model)
-            await self.send_models()
+            await self._changed(voice_active and role == "chat")
 
     def chat(self, text: str) -> None:
         """Start a text-chat turn in the background so the receive loop keeps running."""
         task = asyncio.create_task(self._chat(text))
         self._chats.add(task)
         task.add_done_callback(self._chats.discard)
+
+    @property
+    def running_chats(self) -> int:
+        return len(self._chats)
+
+    async def cancel_chats(self) -> list[str]:
+        """User STOP: cancel the text-chat turns in flight; returns one `chat` name per cancelled turn."""
+        tasks = [t for t in self._chats if not t.done()]
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        return ["chat"] * len(tasks)
 
     async def close(self) -> None:
         self.approvals.close()
@@ -118,10 +151,14 @@ class AgentSession:
             await self.emit({"t": "chat_delta", "id": msg_id, "text": chunk})
 
         async with self._lock:
+            turn_start = len(self.history)
             self.history.append({"role": "user", "content": text})
             await self.emit({"t": "state", "state": "thinking"})
             try:
                 await self._answer(delta)
+            except asyncio.CancelledError:
+                del self.history[turn_start:]  # drop the half-finished turn: no dangling tool calls
+                raise
             except Exception as e:
                 log.exception("text chat failed")
                 await self.emit({"t": "error", "message": f"chat: {type(e).__name__}: {e}"[:300]})
