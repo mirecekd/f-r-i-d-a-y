@@ -1,0 +1,23 @@
+services:
+  friday:
+    build:
+      context: .
+      args:
+        FRIDAY_VERSION: ${FRIDAY_VERSION:-dev}
+    image: ghcr.io/mirecekd/f-r-i-d-a-y:latest
+    container_name: friday
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    # Loopback only: put a reverse proxy with authentication in front
+    # (Friday has no auth of its own).
+    ports:
+      - "127.0.0.1:8670:8670"
+    volumes:
+      - ./data:/srv/data
+    # Optional integrations (memory, MCP hub, ...) are set in .env,
+    # see .env.example. A service on the Docker host is reachable
+    # at http://host.docker.internal:<port>.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

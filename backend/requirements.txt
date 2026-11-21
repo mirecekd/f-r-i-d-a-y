@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+google-genai>=2.15,<3
+pillow>=11
+python-multipart>=0.0.20
+mcp>=2,<3

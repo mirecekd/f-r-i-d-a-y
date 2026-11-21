@@ -1,0 +1,38 @@
+/* frontend/src/views/memory.css - memory orbs panel and immersive mode */
+.vp[data-kind="memory_graph"] .vp-body { padding: 0; overflow: hidden; }
+.mg { position: relative; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(ellipse at 50% 45%, #07182a 0%, #02060c 75%); }
+.mg-full { position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse at 50% 45%, rgba(7,24,42,.94) 0%, rgba(2,6,12,.97) 80%); }
+.mg-canvas { position: absolute; inset: 0; touch-action: none; }
+.mg-bar { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
+.mg-bar-row { display: flex; gap: 6px; align-items: center; }
+.mg-full .mg-bar { left: 70px; right: 70px; top: 84px; }
+.mg-bar > * { pointer-events: auto; }
+.mg-search { flex: 1; min-width: 0; height: 44px; background: rgba(4,18,30,.7); border: 1px solid var(--dim); border-radius: 8px;
+  color: inherit; padding: 0 12px; font: inherit; outline: none; }
+.mg-search:focus { border-color: var(--c); box-shadow: 0 0 10px rgba(79,216,255,.4); }
+.mg-status { align-self: flex-start; max-width: 100%; padding: 2px 8px; font-size: 12px; letter-spacing: .06em; color: var(--c); border-radius: 6px;
+  background: rgba(2,6,12,.6); text-shadow: 0 0 6px var(--c); }
+.mg-status:empty { display: none; }
+.mg-btn { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; background: rgba(4,18,30,.7); }
+.mg-btn.on { background: rgba(79,216,255,.25); }
+.mg-full .mg-close { display: none; }
+.mg-key { position: absolute; left: 8px; bottom: 8px; display: none; flex-wrap: wrap; gap: 4px 12px; max-width: calc(100% - 16px); padding: 4px 10px;
+  font-size: 12px; color: #9fd4e6; background: rgba(2,6,12,.55); border-radius: 6px; pointer-events: none; }
+.mg-key-i { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.mg-key-i[hidden] { display: none; }
+.mg-full .mg-key { display: flex; left: 70px; bottom: 120px; }
+@container (min-width: 520px) { .mg-key { display: flex; } }
+.mg { container-type: size; }
+.mg-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--k); box-shadow: 0 0 8px var(--k); flex: none; }
+.mg-card { position: absolute; right: 8px; top: 62px; width: min(260px, calc(100% - 16px)); padding: 12px; display: flex; flex-direction: column; gap: 6px;
+  background: rgba(4,18,30,.88); backdrop-filter: blur(12px); border: 1px solid rgba(79,216,255,.4); border-radius: 10px;
+  box-shadow: 0 0 24px rgba(79,216,255,.18); }
+.mg-full .mg-card { top: 148px; right: 70px; }
+.mg-card[hidden], .mg-tip[hidden] { display: none; }
+.mg-card-x { position: absolute; right: 6px; top: 6px; width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-color: transparent; }
+.mg-kind { align-self: flex-start; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--k); text-shadow: 0 0 8px var(--k); }
+.mg-label { margin: 0; padding-right: 40px; font-size: 16px; line-height: 1.25; color: #e8faff; word-break: break-word; }
+.mg-row { font-size: 13px; color: #8fc8dc; }
+.mg-ask { min-height: 44px; margin-top: 4px; background: rgba(79,216,255,.18); font-size: 15px; letter-spacing: .05em; }
+.mg-tip { position: absolute; pointer-events: none; max-width: 240px; padding: 4px 9px; font-size: 13px; border-radius: 6px;
+  background: rgba(2,6,12,.88); border: 1px solid rgba(79,216,255,.4); color: #e8faff; z-index: 3; }

@@ -1,0 +1,37 @@
+/* frontend/src/views/memory_filters.css - filter drawer of the memory graph */
+.mgf { position: absolute; top: 62px; right: 0; bottom: 0; width: min(340px, 100%); z-index: 4; display: flex; flex-direction: column;
+  background: rgba(3,12,22,.94); backdrop-filter: blur(14px); border-left: 1px solid rgba(79,216,255,.4); box-shadow: -8px 0 28px rgba(0,0,0,.5);
+  transform: translateX(105%); transition: transform .22s ease; visibility: hidden; }
+.mgf.open { transform: none; visibility: visible; }
+.mgf[hidden] { display: none; }
+.mg-full .mgf { position: fixed; top: 158px; bottom: 120px; right: 12px; width: min(360px, calc(100% - 24px)); border: 1px solid rgba(79,216,255,.4); border-radius: 12px; }
+.mgf-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 6px 14px; font-size: 15px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--c); border-bottom: 1px solid rgba(79,216,255,.25); }
+.mgf-scroll { flex: 1; overflow-y: auto; padding: 4px 12px 16px; overscroll-behavior: contain; }
+.mgf-sec { padding: 10px 0 6px; border-bottom: 1px solid rgba(79,216,255,.12); }
+.mgf-h { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: #6fb4cc; }
+.mgf-body { display: flex; flex-direction: column; gap: 4px; }
+.mgf-lab { margin-top: 6px; font-size: 12px; color: #8fc8dc; }
+.mgf-row { display: flex; gap: 6px; align-items: stretch; }
+.mgf-act { min-height: 44px; padding: 0 12px; font-size: 14px; background: rgba(79,216,255,.1); flex: 1; }
+.mgf-x { flex: none; min-width: 44px; }
+.mgf-solo { flex: none; min-width: 88px; font-size: 13px; }
+.mgf-sw { position: relative; display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 0 58px 0 10px; width: 100%; text-align: left; font-size: 14px;
+  background: rgba(4,18,30,.6); border: 1px solid rgba(79,216,255,.2); border-radius: 8px; color: #d6f4ff; }
+.mgf-prow .mgf-sw { flex: 1; min-width: 0; }
+.mgf-sw-l { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mgf-n { font-size: 12px; color: #7fb6cc; }
+.mgf-knob { position: absolute; right: 10px; top: 50%; width: 36px; height: 20px; margin-top: -10px; border-radius: 10px; background: rgba(120,150,165,.35); transition: background .15s; }
+.mgf-knob::after { content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #cfe9f3; transition: transform .15s; }
+.mgf-sw[aria-checked="true"] .mgf-knob { background: rgba(79,216,255,.7); }
+.mgf-sw[aria-checked="true"] .mgf-knob::after { transform: translateX(16px); background: #fff; }
+.mgf-sw[aria-checked="false"] { opacity: .65; }
+.mgf-seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.mgf-seg button { flex: 1; min-width: 56px; min-height: 44px; padding: 0 8px; font-size: 14px; background: rgba(4,18,30,.6); }
+.mgf-seg button.on { background: rgba(79,216,255,.3); border-color: var(--c); box-shadow: 0 0 8px rgba(79,216,255,.35); }
+.mgf-q { height: 44px; padding: 0 12px; font: inherit; color: inherit; background: rgba(4,18,30,.7); border: 1px solid var(--dim); border-radius: 8px; outline: none; }
+.mgf-q:focus { border-color: var(--c); }
+.mgf-list { display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; }
+.mgf-range { width: 100%; height: 44px; accent-color: var(--c); }
+.mgf button:focus-visible, .mgf input:focus-visible { outline: 2px solid var(--c); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { .mgf, .mgf-knob, .mgf-knob::after { transition: none; } }

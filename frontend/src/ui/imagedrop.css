@@ -1,0 +1,15 @@
+/* frontend/src/ui/imagedrop.css - drop veil, paperclip and image bubbles in the chat */
+/* images in the chat: drop veil, paperclip, bubbles */
+#dropveil { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center;
+  font-size: 34px; letter-spacing: .3em; text-transform: uppercase; color: var(--c); text-shadow: 0 0 14px var(--c);
+  background: rgba(4, 18, 30, .72); backdrop-filter: blur(10px); border: 2px dashed var(--c); margin: 14px; border-radius: 16px;
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .15s ease, visibility 0s linear .15s; }
+#dropveil.show { opacity: 1; visibility: visible; transition: opacity .15s ease; }
+#attach { flex: 0 0 44px; width: 44px; min-height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; }
+.msg.img { display: flex; flex-direction: column; gap: 4px; max-width: 92%; white-space: normal; }
+.chat-thumb { max-width: 100%; max-height: 160px; object-fit: contain; border-radius: 6px; align-self: center; background: rgba(0,0,0,.35); }
+.chat-imgname { font-size: 12px; color: var(--dim); overflow-wrap: anywhere; }
+.chat-imgstate { font-size: 12px; color: #ffc866; }
+.chat-imgstate.sending, .chat-imgstate.analysing { animation: pulse 1s infinite; }
+.chat-imgstate.failed { color: #ff7088; animation: none; }
+.msg.img.failed { border-color: #ff4060; }

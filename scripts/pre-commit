@@ -1,0 +1,5 @@
+#!/bin/sh
+# scripts/pre-commit - local safety net: refuses private files, company/customer words and key-like strings.
+# Install with scripts/install-hooks.sh. The word list lives (encoded) in scripts/privacy_scan.py.
+root=$(git rev-parse --show-toplevel) || exit 1
+exec python3 "$root/scripts/privacy_scan.py" --staged

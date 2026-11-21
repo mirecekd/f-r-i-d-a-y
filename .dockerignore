@@ -1,0 +1,17 @@
+.git/
+.github/
+.env
+.private-words
+memory-bank/
+.briefs/
+data/
+*.log
+.venv/
+.venv
+node_modules/
+frontend/node_modules/
+backend/static/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/

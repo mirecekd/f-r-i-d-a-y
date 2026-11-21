@@ -1,0 +1,82 @@
+{
+  "mcpServers": {
+    "hub": {
+      "transport": "streamable-http",
+      "url_env": "MCP_HUB_URL",
+      "path": "/mcp",
+      "token_env": "MCP_HUB_TOKEN",
+      "continue_on_error": true,
+      "allowed_tools": [
+        "tavily-tavily_search",
+        "context7-resolve-library-id",
+        "context7-query-docs",
+        "aws-knowledge-aws___search_documentation",
+        "aws-knowledge-aws___read_documentation"
+      ],
+      "tool_policies": {
+        "tavily-tavily_search": {
+          "risky": false
+        },
+        "context7-resolve-library-id": {
+          "risky": false
+        },
+        "context7-query-docs": {
+          "risky": false
+        },
+        "aws-knowledge-aws___search_documentation": {
+          "risky": false
+        },
+        "aws-knowledge-aws___read_documentation": {
+          "risky": false
+        }
+      }
+    },
+    "home-assistant": {
+      "transport": "streamable-http",
+      "url_env": "HA_URL",
+      "path": "/api/mcp",
+      "token_env": "HA_TOKEN",
+      "continue_on_error": true,
+      "allowed_tools": [
+        "homeassistant__GetLiveContext",
+        "intent__HassClimateSetTemperature",
+        "intent__HassTurnOn",
+        "intent__HassTurnOff"
+      ],
+      "tool_policies": {
+        "homeassistant__GetLiveContext": {
+          "allowed_names": [
+            "Living Room Light",
+            "Living Room Thermostat",
+            "Garage Door",
+            "Outdoor Temperature",
+            "Front Door Lock"
+          ],
+          "risky": false
+        },
+        "intent__HassClimateSetTemperature": {
+          "allowed_names": [
+            "Living Room Thermostat"
+          ],
+          "risky": true
+        },
+        "intent__HassTurnOn": {
+          "allowed_names": [
+            "Living Room Light",
+            "Living Room Thermostat",
+            "Garage Door"
+          ],
+          "risky": true
+        },
+        "intent__HassTurnOff": {
+          "allowed_names": [
+            "Living Room Light",
+            "Living Room Thermostat",
+            "Garage Door"
+          ],
+          "risky": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+/* frontend/src/ui/zoombox.css */
+#zoomdraw { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; touch-action: none; }
+#zoombtn, #zoomback { width: 64px; height: 64px; padding: 0; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(4, 18, 30, .6); box-shadow: 0 0 18px rgba(79,216,255,.25); }
+#zoombtn.on { background: rgba(79,216,255,.22); box-shadow: 0 0 22px rgba(79,216,255,.5); border-color: #8fe8ff; color: #d8f6ff; }
+#zoomback { align-content: center; gap: 0; font-size: 9px; letter-spacing: .12em; }
+#zoomback span { display: block; margin-top: -2px; }
+#zoombox-hint { position: fixed; left: 50%; bottom: calc(118px + var(--sab)); transform: translateX(-50%); z-index: 4; padding: 4px 12px;
+  border-radius: 8px; font-size: 12px; letter-spacing: .16em; color: #d8f6ff; background: rgba(4, 18, 30, .55); pointer-events: none;
+  text-shadow: 0 0 8px rgba(79,216,255,.6); }
+#zoombox-hint[hidden] { display: none; }
+body.zoommode #stage { cursor: crosshair; }

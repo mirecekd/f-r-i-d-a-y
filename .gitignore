@@ -1,0 +1,17 @@
+# .gitignore - nothing private goes to git: secrets, local data, notes
+.env
+.private-words
+memory-bank/
+.briefs/
+data/
+*.log
+.venv/
+.venv
+node_modules/
+frontend/node_modules/
+dist/
+backend/static/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/

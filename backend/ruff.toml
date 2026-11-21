@@ -1,0 +1,8 @@
+# backend/ruff.toml
+line-length = 120
+target-version = "py312"
+extend-exclude = [".venv", "static"]
+
+[lint]
+select = ["E", "F", "I", "W", "B"]
+ignore = ["E501", "E701", "E702", "E731", "B008"]

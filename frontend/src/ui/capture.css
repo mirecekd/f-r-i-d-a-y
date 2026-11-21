@@ -1,0 +1,30 @@
+/* frontend/src/ui/capture.css */
+#dock { position: fixed; left: 50%; bottom: calc(36px + var(--sab)); transform: translateX(-50%); z-index: 7;
+  display: flex; gap: 12px; align-items: center; }
+#dock > button { position: relative; flex: none; }
+#dock > button[hidden] { display: none; }
+#dock svg { display: block; }
+#camerabtn, #screenbtn { width: 64px; height: 64px; padding: 0; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(4, 18, 30, .6); box-shadow: 0 0 18px rgba(79,216,255,.25); }
+#camerabtn.on, #screenbtn.on { background: rgba(255, 64, 96, .25); border-color: #ff4060; color: #ff7088;
+  box-shadow: 0 0 22px rgba(255,64,96,.55); }
+
+#capprev { position: fixed; z-index: 8; width: 160px; border: 1px solid #ff4060; border-radius: 8px; overflow: hidden;
+  background: #000; box-shadow: 0 0 18px rgba(255,64,96,.45); touch-action: none; cursor: grab; user-select: none; }
+#capprev.idle { border-color: #ffc866; box-shadow: 0 0 14px rgba(255,200,102,.35); }
+#capprev video { display: block; width: 160px; height: 100px; object-fit: cover; background: #000; pointer-events: none; }
+#capprev video.mirror { transform: scaleX(-1); }
+#capprev .cap-tag { position: absolute; left: 6px; top: 6px; display: flex; gap: 6px; align-items: center; padding: 2px 7px;
+  border-radius: 10px; background: rgba(0,0,0,.6); color: #ff7088; font-size: 11px; letter-spacing: .12em; }
+#capprev.idle .cap-tag { color: #ffc866; }
+#capprev .cap-dot { width: 9px; height: 9px; border-radius: 50%; background: #ff4060; box-shadow: 0 0 8px #ff4060;
+  animation: pulse 1s infinite; }
+#capprev.idle .cap-dot { background: #ffc866; box-shadow: none; animation: none; }
+#capprev .cap-flip { position: absolute; right: 4px; bottom: 4px; width: 44px; height: 44px; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; background: rgba(0,0,0,.55); border-color: var(--c); }
+#capprev .cap-flip[hidden] { display: none; }
+
+#capnote { position: fixed; left: 50%; bottom: calc(118px + var(--sab)); transform: translateX(-50%); z-index: 9;
+  max-width: min(520px, 86vw); padding: 8px 14px; border-radius: 8px; text-align: center; color: #ffe2a8;
+  background: rgba(30, 20, 4, .85); border: 1px solid #ffc866; pointer-events: none; opacity: 0; transition: opacity .3s; }
+#capnote.show { opacity: 1; }
