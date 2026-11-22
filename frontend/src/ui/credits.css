@@ -1,0 +1,9 @@
+/* frontend/src/ui/credits.css */
+#settings .cr-toggle { width: 100%; text-align: left; padding: 8px 10px; background: rgba(4,18,30,.55); cursor: pointer;
+  border: 1px solid rgba(79,216,255,.3); border-radius: 6px; color: var(--c); font-size: 14px; }
+#settings .cr-toggle[aria-expanded="true"] { background: rgba(79,216,255,.14); }
+#settings .cr-toggle:focus-visible, #settings .cr-link:focus-visible { outline: 2px solid var(--c); outline-offset: 2px; }
+#settings .cr-list { list-style: none; margin: 8px 0 0; padding: 0; max-height: 30vh; overflow-y: auto; scrollbar-width: thin; }
+#settings .cr-item { margin: 0 0 6px; font-size: 13px; color: #9fc9da; line-height: 1.35; }
+#settings .cr-name { color: #d6f2ff; }
+#settings .cr-link { color: var(--c); }

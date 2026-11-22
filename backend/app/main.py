@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import __version__
+from app.assets import router as assets_router
 from app.agent_wiring import AgentSession
 from app.conversation import new_conversation
 from app.entities.messages import KINDS as ENTITY_MESSAGES
@@ -40,6 +41,7 @@ tool_registry = ToolRegistry()  # hook: MCP / Hermes / artist tools register her
 app.include_router(vision_router)
 app.include_router(files_router)
 app.include_router(mcp_router)
+app.include_router(assets_router)
 
 
 @app.get("/health")
@@ -125,8 +127,12 @@ async def handle(ws: WebSocket, msg: dict, voice: VoiceBridge, agent: AgentSessi
         await agent.deck.handle(msg)
     elif kind in WORKSHOP_MESSAGES:
         await handle_workshop_message(agent.workshop, msg)
+    elif kind == "assets_credits":
+        await agent.assets.on_message(msg)
     elif kind == "web_add":
         await agent.web.on_message(msg)
+    elif kind in ("undo", "redo"):
+        await agent.undo.on_message(msg)
     elif kind == "select":
         scene.select(msg.get("ids", []))
     elif kind == "demo" and os.getenv("FRIDAY_DEMO") == "1" and msg.get("what") == "scene":

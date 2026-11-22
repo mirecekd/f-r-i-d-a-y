@@ -2,6 +2,25 @@
 
 Versions are `YYYYMMDD.X` (build day and the counter of that day).
 
+## [20261121.5] - 2026-11-21
+
+### New
+- 3D asset catalog (`backend/app/assets`): a curated index of 271 CC0 models (furniture, plants, trees, animals, people, vehicles, buildings,
+  street items, props from Quaternius and Kenney packs). Tools `asset_find` (offline search, Czech and English words), `asset_place` (downloads
+  on first use, adds a labelled `gltf` object) and `asset_credits`; the settings gear has a collapsible "Zdroje modelu" list. Models are
+  never committed: they are fetched into `<FRIDAY_DATA_DIR>/assets` through the SSRF-guarded fetcher. `scripts/build_asset_index.py`
+  regenerates the index from `scripts/asset_packs.json`. See docs/protocol.md.
+- Model fallback ladder (`backend/app/agent/fallback.py`): the agent role retries a rate limited or failing model on up to 3 same-role
+  alternates (other provider first, cheaper names first); only 429, 408, 5xx, timeouts, connection resets and overloaded / quota / rate
+  limit text fall back, never 400, 401, 403 or content errors. A failed model cools down 60 s (doubling to 5 min) and each switch sends one
+  `notice` ("Model X is rate limited, using Y"). See docs/protocol.md.
+- Spoken progress (`backend/app/voice/progress.py`): while a long tool runs the Live model says a short line at the start and once more
+  after 10 s (max 3 per call, 1 per 6 s, never over speech). Switch: `FRIDAY_SPOKEN_PROGRESS` (default on). See docs/protocol.md.
+- Shared undo: `undo(steps?)` / `redo()` voice tools and `{t:'undo'|'redo'}` messages undo scene edits made by tools (add, move, delete with
+  children, clear, links, deck placement), up to 30 steps; model3d and workshop changes are delegated to their own history. Approval-gated
+  destructive actions are not undoable. See docs/protocol.md.
+- Task-state line in the HUD: plain-word label (Hledam, Vzpominam, Stavim, ...) by tool category, minimum 600 ms, fades 1.5 s after the last tool.
+
 ## [20261121.4] - 2026-11-21
 
 ### New

@@ -1,0 +1,571 @@
+[
+ {
+  "id": "qhome",
+  "name": "Ultimate House Interior Pack",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_evidence": "source page links the CC0 1.0 deed (publicdomain/zero/1.0); files mirrored at a pinned commit",
+  "source_page": "https://quaternius.com/packs/ultimatehomeinterior.html",
+  "base_url": "https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/0128ca510d653bb04d6d1e4885bd8890b5050b4f/public/glb/house_interior_pack/",
+  "category": "furniture",
+  "categories": {
+   "^(Bed|Chair|Couch|Stool|Table|Drawer|NightStand|Shelf|Bookshelf)": "furniture",
+   "^(Bathroom|Kitchen)": "appliance",
+   "^Light": "lighting",
+   "^(Houseplant)": "plant",
+   "^(Plate|Fork|Knife|Spoon)": "tableware",
+   "^(Carpet|Curtains)": "decor",
+   "^Trashcan": "prop"
+  },
+  "tags": [
+   "home",
+   "interior",
+   "room"
+  ],
+  "files": [
+   "Bathroom_Bathtub.glb",
+   "Bathroom_Mirror1.glb",
+   "Bathroom_Mirror2.glb",
+   "Bathroom_Shower1.glb",
+   "Bathroom_Sink.glb",
+   "Bathroom_Toilet.glb",
+   "Bathroom_Toilet2.glb",
+   "Bathroom_ToiletPaper.glb",
+   "Bathroom_ToiletPaperPile.glb",
+   "Bathroom_Towel.glb",
+   "Bathroom_WashingMachine.glb",
+   "Bed_Bunk.glb",
+   "Bed_King.glb",
+   "Bed_Single.glb",
+   "Bookshelf.glb",
+   "Carpet_1.glb",
+   "Carpet_2.glb",
+   "Carpet_Round.glb",
+   "Chair_1.glb",
+   "Chair_2.glb",
+   "Chair_3.glb",
+   "Chair_4.glb",
+   "Couch_L.glb",
+   "Couch_Large1.glb",
+   "Couch_Large2.glb",
+   "Couch_Large3.glb",
+   "Couch_Medium1.glb",
+   "Couch_Medium2.glb",
+   "Couch_Small1.glb",
+   "Couch_Small2.glb",
+   "Curtains_Double.glb",
+   "Curtains_Single.glb",
+   "Door_1.glb",
+   "Door_Double.glb",
+   "Drawer_1.glb",
+   "Drawer_2.glb",
+   "Drawer_3.glb",
+   "Drawer_4.glb",
+   "Drawer_5.glb",
+   "Fireplace.glb",
+   "Fork.glb",
+   "Houseplant_1.glb",
+   "Houseplant_2.glb",
+   "Houseplant_3.glb",
+   "Houseplant_4.glb",
+   "Houseplant_5.glb",
+   "Houseplant_6.glb",
+   "Houseplant_7.glb",
+   "Houseplant_8.glb",
+   "Kitchen_1Drawers.glb",
+   "Kitchen_2Drawers.glb",
+   "Kitchen_3Drawers.glb",
+   "Kitchen_Cabinet1.glb",
+   "Kitchen_Cabinet2.glb",
+   "Kitchen_CabinetSmall.glb",
+   "Kitchen_Fridge.glb",
+   "Kitchen_Oven.glb",
+   "Kitchen_Oven_Large.glb",
+   "Kitchen_Sink.glb",
+   "Knife.glb",
+   "Light_Ceiling1.glb",
+   "Light_CeilingSingle.glb",
+   "Light_Chandelier.glb",
+   "Light_Cube.glb",
+   "Light_Desk.glb",
+   "Light_Floor1.glb",
+   "Light_Floor2.glb",
+   "Light_Icosahedron.glb",
+   "Light_Small.glb",
+   "Light_Stand1.glb",
+   "NightStand_1.glb",
+   "NightStand_2.glb",
+   "NightStand_3.glb",
+   "Plate_1.glb",
+   "Plate_2.glb",
+   "Shelf_1.glb",
+   "Shelf_2.glb",
+   "Shelf_Large.glb",
+   "Shelf_Small1.glb",
+   "Shelf_Small2.glb",
+   "Shelf_Small3.glb",
+   "Spoon.glb",
+   "Stool.glb",
+   "Table_RoundLarge.glb",
+   "Table_RoundSmall.glb",
+   "Table_RoundSmall2.glb",
+   "Trashcan_Cylindric.glb",
+   "Trashcan_Green.glb",
+   "Trashcan_Large.glb",
+   "Trashcan_Small1.glb"
+  ]
+ },
+ {
+  "id": "qsurv",
+  "name": "Survival Pack",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_evidence": "source page links the CC0 1.0 deed (publicdomain/zero/1.0); files mirrored at a pinned commit",
+  "source_page": "https://quaternius.com/packs/survival.html",
+  "base_url": "https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/0128ca510d653bb04d6d1e4885bd8890b5050b4f/public/glb/survival_pack/",
+  "category": "props",
+  "categories": {
+   "^(Pistol|Revolver|Shotgun|FlareGun)": "weapon",
+   "^(Tent|Bonfire|Raft)": "outdoor"
+  },
+  "tags": [
+   "survival",
+   "camping"
+  ],
+  "files": [
+   "Axe.glb",
+   "Backpack.glb",
+   "Bandages.glb",
+   "Battery_Big.glb",
+   "Bonfire.glb",
+   "Bonfire_Fire.glb",
+   "Can_Red.glb",
+   "FirstAidKit.glb",
+   "FirstAidKit_Hard.glb",
+   "FlareGun.glb",
+   "GasCan.glb",
+   "Knife.glb",
+   "Match.glb",
+   "Matchbox.glb",
+   "Pan.glb",
+   "Phone.glb",
+   "Pistol_1.glb",
+   "Pot.glb",
+   "PropaneTank.glb",
+   "Radio.glb",
+   "Raft.glb",
+   "Raft_Paddle.glb",
+   "Revolver_1.glb",
+   "Shotgun_1.glb",
+   "Shotgun_2.glb",
+   "Shovel.glb",
+   "Tent.glb",
+   "Torch.glb",
+   "Trashcan.glb",
+   "WaterBottle_1.glb",
+   "WoodLog.glb",
+   "WoodenTorch.glb",
+   "WoodenTorch_Fire.glb"
+  ]
+ },
+ {
+  "id": "qvill",
+  "name": "Medieval Village Pack",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_evidence": "source page links the CC0 1.0 deed (publicdomain/zero/1.0); files mirrored at a pinned commit",
+  "source_page": "https://quaternius.com/packs/medievalvillage.html",
+  "base_url": "https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/0128ca510d653bb04d6d1e4885bd8890b5050b4f/public/glb/medieval_village_pack/",
+  "category": "buildings",
+  "categories": {
+   "^(Bag|Barrel|Bell$|Cart|Cauldron|Crate|Hay|Package|Fence|Bench|MarketStand|Well|Rock)": "props",
+   "^(Door|Window|Path|Stairs|Smoke|Sawmill_saw)": "parts"
+  },
+  "tags": [
+   "medieval",
+   "village",
+   "fantasy"
+  ],
+  "files": [
+   "Bag.glb",
+   "Bags.glb",
+   "Barrel.glb",
+   "Bell.glb",
+   "Bell_Tower.glb",
+   "Bench_1.glb",
+   "Bench_2.glb",
+   "Blacksmith.glb",
+   "Cart.glb",
+   "Cauldron.glb",
+   "Crate.glb",
+   "Fence.glb",
+   "Gazebo.glb",
+   "Hay.glb",
+   "House_1.glb",
+   "House_2.glb",
+   "House_3.glb",
+   "House_4.glb",
+   "Inn.glb",
+   "MarketStand_1.glb",
+   "MarketStand_2.glb",
+   "Mill.glb",
+   "Package_1.glb",
+   "Rock_1.glb",
+   "Sawmill.glb",
+   "Stable.glb",
+   "Well.glb"
+  ]
+ },
+ {
+  "id": "qnat",
+  "name": "Ultimate Nature Pack",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_evidence": "source page links the CC0 1.0 deed (publicdomain/zero/1.0); files mirrored at a pinned commit",
+  "source_page": "https://quaternius.com/packs/ultimatenature.html",
+  "base_url": "https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/0128ca510d653bb04d6d1e4885bd8890b5050b4f/public/glb/nature_pack/",
+  "category": "nature",
+  "categories": {
+   "Tree|Willow": "trees",
+   "Rock|Stump|Log": "rocks",
+   "Bush|Grass|Flower|Plant|Cactus|Corn|Wheat|Lilypad": "plants"
+  },
+  "tags": [
+   "nature",
+   "outdoor"
+  ],
+  "files": [
+   "BirchTree_1.glb",
+   "BirchTree_2.glb",
+   "BushBerries_1.glb",
+   "Bush_1.glb",
+   "CactusFlower_1.glb",
+   "Cactus_1.glb",
+   "CommonTree_1.glb",
+   "CommonTree_2.glb",
+   "Corn_1.glb",
+   "Grass_Short.glb",
+   "Lilypad.glb",
+   "PalmTree_1.glb",
+   "PalmTree_2.glb",
+   "PineTree_1.glb",
+   "PineTree_2.glb",
+   "Plant_1.glb",
+   "Plant_2.glb",
+   "Wheat.glb",
+   "Willow_1.glb"
+  ]
+ },
+ {
+  "id": "qsnat",
+  "name": "Simple Nature Pack",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_evidence": "source page links the CC0 1.0 deed (publicdomain/zero/1.0); files mirrored at a pinned commit",
+  "source_page": "https://quaternius.com/packs/simplenature.html",
+  "base_url": "https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/0128ca510d653bb04d6d1e4885bd8890b5050b4f/public/glb/simple_nature_pack/",
+  "category": "nature",
+  "categories": {
+   "Tree": "trees",
+   "Rock": "rocks",
+   "Bush|Grass": "plants"
+  },
+  "tags": [
+   "nature",
+   "outdoor"
+  ],
+  "files": [
+   "Bush1.glb",
+   "Bush2.glb",
+   "Bush3.glb",
+   "Grass1.glb",
+   "Grass2.glb",
+   "Grass3.glb",
+   "Rock1.glb",
+   "Rock2.glb",
+   "Rock3.glb",
+   "Tree1.glb",
+   "Tree2.glb",
+   "Tree3.glb",
+   "Tree4.glb"
+  ]
+ },
+ {
+  "id": "qstreet",
+  "name": "Modular Streets Pack",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_evidence": "source page links the CC0 1.0 deed (publicdomain/zero/1.0); files mirrored at a pinned commit",
+  "source_page": "https://quaternius.com/packs/modularstreets.html",
+  "base_url": "https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/0128ca510d653bb04d6d1e4885bd8890b5050b4f/public/glb/street_pack/",
+  "category": "city",
+  "categories": {
+   "^Sign|^Traffic|^Streetlight": "street furniture"
+  },
+  "tags": [
+   "street",
+   "road",
+   "city"
+  ],
+  "files": [
+   "Sign_NoParking.glb",
+   "Sign_Stop.glb",
+   "Sign_Triangle.glb",
+   "Street_3Way.glb",
+   "Street_4Way.glb",
+   "Street_Curve.glb",
+   "Street_Deadend.glb",
+   "Street_Empty.glb",
+   "Street_Straight.glb",
+   "Streetlight_Double.glb",
+   "Streetlight_Single.glb",
+   "Streetlight_Triple.glb",
+   "TrafficLight.glb",
+   "TrafficLight_2.glb"
+  ]
+ },
+ {
+  "id": "qanim",
+  "name": "Ultimate Animated Animal Pack",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_evidence": "source page links the CC0 1.0 deed (publicdomain/zero/1.0); files mirrored at a pinned commit",
+  "source_page": "https://quaternius.com/packs/ultimateanimatedanimals.html",
+  "base_url": "https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/0128ca510d653bb04d6d1e4885bd8890b5050b4f/public/glb/animals_pack/",
+  "category": "animals",
+  "categories": {},
+  "tags": [
+   "animal"
+  ],
+  "files": [
+   "Alpaca.glb",
+   "Bull.glb",
+   "Cow.glb",
+   "Deer.glb",
+   "Donkey.glb",
+   "Fox.glb",
+   "Horse.glb",
+   "Husky.glb",
+   "ShibaInu.glb",
+   "Stag.glb",
+   "Wolf.glb"
+  ]
+ },
+ {
+  "id": "qmen",
+  "name": "Ultimate Modular Men Pack",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_evidence": "source page links the CC0 1.0 deed (publicdomain/zero/1.0); files mirrored at a pinned commit",
+  "source_page": "https://quaternius.com/packs/ultimatemodularcharacters.html",
+  "base_url": "https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/0128ca510d653bb04d6d1e4885bd8890b5050b4f/public/glb/modular_men/",
+  "category": "characters",
+  "categories": {},
+  "tags": [
+   "person",
+   "man",
+   "character"
+  ],
+  "files": [
+   "Adventurer.glb",
+   "Beach.glb",
+   "Casual.glb",
+   "Casual2.glb",
+   "Farmer.glb",
+   "King.glb",
+   "Punk.glb",
+   "Spacesuit.glb",
+   "Suit.glb",
+   "Swat.glb",
+   "Worker.glb"
+  ]
+ },
+ {
+  "id": "qwomen",
+  "name": "Ultimate Modular Women Pack",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_evidence": "source page links the CC0 1.0 deed (publicdomain/zero/1.0); files mirrored at a pinned commit",
+  "source_page": "https://quaternius.com/packs/ultimatemodularwomen.html",
+  "base_url": "https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/0128ca510d653bb04d6d1e4885bd8890b5050b4f/public/glb/modular_women/",
+  "category": "characters",
+  "categories": {},
+  "tags": [
+   "person",
+   "woman",
+   "character"
+  ],
+  "files": [
+   "Adventurer.glb",
+   "Casual.glb",
+   "Formal.glb",
+   "Medieval.glb",
+   "Punk.glb",
+   "SciFi.glb",
+   "Soldier.glb",
+   "Suit.glb",
+   "Witch.glb",
+   "Worker.glb"
+  ]
+ },
+ {
+  "id": "qship",
+  "name": "Ships Pack",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_evidence": "source page links the CC0 1.0 deed (publicdomain/zero/1.0); files mirrored at a pinned commit",
+  "source_page": "https://quaternius.com/packs/ships.html",
+  "base_url": "https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/0128ca510d653bb04d6d1e4885bd8890b5050b4f/public/glb/ships_pack/",
+  "category": "vehicles",
+  "categories": {},
+  "tags": [
+   "boat",
+   "ship",
+   "vehicle"
+  ],
+  "files": [
+   "Boat.glb",
+   "BoatWSail.glb",
+   "CruiseShip.glb",
+   "Lifeboat.glb",
+   "Sail_ship.glb",
+   "Viking_boat.glb"
+  ]
+ },
+ {
+  "id": "qbld",
+  "name": "Ultimate Buildings Pack (textured)",
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "license_evidence": "source page links the CC0 1.0 deed (publicdomain/zero/1.0); files mirrored at a pinned commit",
+  "source_page": "https://quaternius.com/packs/ultimatetexturedbuildings.html",
+  "base_url": "https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/0128ca510d653bb04d6d1e4885bd8890b5050b4f/public/glb/buildings_pack_3/",
+  "category": "buildings",
+  "categories": {},
+  "tags": [
+   "building",
+   "house",
+   "city"
+  ],
+  "files": [
+   "1Story_Mat.glb",
+   "2Story_Balcony_Mat.glb",
+   "2Story_Mat.glb",
+   "3Story_Small_Mat.glb",
+   "4Story_Mat.glb",
+   "6Story_Stack_Mat.glb"
+  ]
+ },
+ {
+  "id": "kcity",
+  "name": "Kenney Starter Kit City Builder",
+  "author": "Kenney",
+  "license": "CC0-1.0",
+  "license_evidence": "repository README states the 3D models are CC0 licensed",
+  "source_page": "https://github.com/KenneyNL/Starter-Kit-City-Builder",
+  "base_url": "https://raw.githubusercontent.com/KenneyNL/Starter-Kit-City-Builder/4535092b740b378b700efd9df9e27a631815b84a/models/",
+  "category": "city",
+  "categories": {
+   "^building": "buildings",
+   "^road|^pavement": "city",
+   "^grass": "nature"
+  },
+  "tags": [
+   "city",
+   "town"
+  ],
+  "files": [
+   "building-garage.glb",
+   "building-small-a.glb",
+   "building-small-b.glb",
+   "building-small-c.glb",
+   "building-small-d.glb",
+   "grass-trees-tall.glb",
+   "grass-trees.glb",
+   "pavement-fountain.glb",
+   "road-corner.glb",
+   "road-intersection.glb",
+   "road-split.glb",
+   "road-straight-lightposts.glb",
+   "road-straight.glb"
+  ]
+ },
+ {
+  "id": "kracing",
+  "name": "Kenney Starter Kit Racing",
+  "author": "Kenney",
+  "license": "CC0-1.0",
+  "license_evidence": "repository README states the 3D models are CC0 licensed",
+  "source_page": "https://github.com/KenneyNL/Starter-Kit-Racing",
+  "base_url": "https://raw.githubusercontent.com/KenneyNL/Starter-Kit-Racing/2f2e5f2646dda89cb21d4e8539bab60c6e955dc8/models/",
+  "category": "vehicles",
+  "categories": {
+   "^decoration": "props"
+  },
+  "tags": [
+   "vehicle",
+   "car",
+   "racing"
+  ],
+  "files": [
+   "vehicle-motorcycle.glb",
+   "vehicle-truck-green.glb",
+   "vehicle-truck-purple.glb",
+   "vehicle-truck-red.glb",
+   "vehicle-truck-yellow.glb",
+   "decoration-tents.glb"
+  ]
+ },
+ {
+  "id": "kplat",
+  "name": "Kenney Starter Kit 3D Platformer",
+  "author": "Kenney",
+  "license": "CC0-1.0",
+  "license_evidence": "repository README states the 3D models are CC0 licensed",
+  "source_page": "https://github.com/KenneyNL/Starter-Kit-3D-Platformer",
+  "base_url": "https://raw.githubusercontent.com/KenneyNL/Starter-Kit-3D-Platformer/3fa8a04b1c01ab23db43123d4ce814a34c3fc7f0/models/",
+  "category": "props",
+  "categories": {
+   "^character": "characters"
+  },
+  "tags": [
+   "game",
+   "platformer"
+  ],
+  "files": [
+   "character.glb",
+   "coin.glb",
+   "flag.glb",
+   "cloud.glb"
+  ]
+ },
+ {
+  "id": "karena",
+  "name": "Kenney Mini Arena (Starter Kit Basic Scene)",
+  "author": "Kenney",
+  "license": "CC0-1.0",
+  "license_evidence": "the Mini Arena License.txt in the repository states CC0",
+  "source_page": "https://github.com/KenneyNL/Starter-Kit-Basic-Scene",
+  "base_url": "https://raw.githubusercontent.com/KenneyNL/Starter-Kit-Basic-Scene/a6927e66ff8dd8e173660ce4825abe773c65f683/sample/Mini%20Arena/Models/GLB%20format/",
+  "category": "props",
+  "categories": {
+   "^character": "characters",
+   "^tree": "nature",
+   "^weapon": "weapon"
+  },
+  "tags": [
+   "arena",
+   "fantasy"
+  ],
+  "files": [
+   "character-soldier.glb",
+   "statue.glb",
+   "tree.glb",
+   "trophy.glb",
+   "column.glb",
+   "banner.glb",
+   "weapon-sword.glb",
+   "weapon-rack.glb"
+  ]
+ }
+]

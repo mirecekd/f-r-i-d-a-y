@@ -14,6 +14,7 @@ from app.agent.loop import Emit, run_agent
 from app.agent.prompt import chat_prompt
 from app.agent_settings import SettingsMixin, pinned_model
 from app.approval import Approvals
+from app.assets import register_asset_tools
 from app.deck.session import DeckSession
 from app.deck.tools import register_deck_tools
 from app.entities.tools import register_entity_tools
@@ -25,6 +26,7 @@ from app.model3d.tools import register_model_tools
 from app.scene import SceneStore
 from app.tools_friday import Ctx, register_all
 from app.tools_friday.search import register_search_tool
+from app.undo import UndoService
 from app.vision import register_vision_tools
 from app.voice.language import current_language
 from app.voice.tools import Tool, ToolRegistry
@@ -57,7 +59,9 @@ class AgentSession(SettingsMixin):
         self.deck = DeckSession(ctx, self.models, self.files, self.vision)
         register_deck_tools(self.registry, self.deck)
         self.workshop = register_workshop_tools(self.registry, ctx)
+        self.assets = register_asset_tools(self.registry, ctx)
         self.web = register_web_tools(self.registry, ctx, self.deck, self.files, self.vision)
+        self.undo = UndoService(self.registry, ctx)  # wraps every tool above, adds undo / redo
         self.registry.register(
             make_draw_tool(lambda: pinned_model("agent"), self.worker_tools, emit)
         )

@@ -8,6 +8,7 @@ New tools (MCP, Hermes, artist) are added with `registry.register(Tool(...))`.
 """
 
 import asyncio
+import contextlib
 import logging
 import time
 import uuid
@@ -18,6 +19,7 @@ from typing import Any
 from google.genai import types
 
 from app.approval import Approvals
+from app.voice.progress import ProgressSpeaker
 
 log = logging.getLogger("friday.voice.tools")
 
@@ -64,9 +66,17 @@ class ToolRegistry:
 class ToolRunner:
     """Executes tool calls from one Live session and reports them to the browser."""
 
-    def __init__(self, registry: ToolRegistry, session: Any, emit: Emit, approvals: Approvals | None = None):
+    def __init__(
+        self,
+        registry: ToolRegistry,
+        session: Any,
+        emit: Emit,
+        approvals: Approvals | None = None,
+        progress: ProgressSpeaker | None = None,
+    ):
         self.registry = registry
         self.approvals = approvals
+        self.progress = progress  # speaks a short line while a long tool runs
         self.session: Any = None
         self.emit = emit
         self.long_running: set[asyncio.Task] = set()
@@ -127,7 +137,8 @@ class ToolRunner:
         await asyncio.gather(*self.long_running, return_exceptions=True)
 
     async def _run_long(self, tool: Tool, call: types.FunctionCall) -> None:
-        response = await self._execute(tool, call)
+        async with self.progress.watch(tool.name, call.id or "") if self.progress else contextlib.nullcontext():
+            response = await self._execute(tool, call)
         reply = self._response(call, response, types.FunctionResponseScheduling[tool.scheduling])
         for _ in range(LATE_RESULT_ATTEMPTS):
             try:  # a reconnect may be in progress: wait for the new session instead of dropping the result

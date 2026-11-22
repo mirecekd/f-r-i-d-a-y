@@ -28,6 +28,11 @@ class Relay:
         self._guard = EchoGuard()
         self._drop_until = 0.0  # monotonic deadline: the model turn answering Friday's own echo is discarded
 
+    @property
+    def someone_speaking(self) -> bool:
+        """The model is producing audio, or the user's transcript of the current turn is still open."""
+        return self._state == "speaking" or bool(self._text["user"].strip())
+
     async def on_content(self, resp: types.LiveServerMessage) -> None:
         sc = resp.server_content
         if self._dropping() and resp.data:

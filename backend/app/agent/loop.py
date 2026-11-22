@@ -10,6 +10,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from app.agent import llm
+from app.agent.fallback import call_with_fallback
 from app.voice.tools import Tool
 
 log = logging.getLogger("friday.agent.loop")
@@ -47,6 +48,30 @@ async def run_tool(tools: dict[str, Tool], call: dict, emit: Emit) -> str:
     return result[:MAX_RESULT_CHARS]
 
 
+async def _chat_round(
+    model: str, messages: list[dict], declared: list[dict], emit: Emit, on_delta: llm.OnDelta | None
+) -> llm.ChatResult:
+    """One model call with the agent-role fallback ladder; once text was streamed it no longer switches model."""
+    streamed = False
+
+    async def track(chunk: str) -> None:
+        nonlocal streamed
+        streamed = True
+        if on_delta:
+            await on_delta(chunk)
+
+    async def notice(text: str) -> None:
+        await emit({"t": "notice", "text": text})
+
+    return await call_with_fallback(
+        "agent",
+        model,
+        lambda m: llm.chat(m, messages, declared, track if on_delta else None),
+        notice,
+        lambda: not streamed,
+    )
+
+
 async def run_agent(
     model: str,
     messages: list[dict],
@@ -57,8 +82,9 @@ async def run_agent(
 ) -> str:
     """Run the loop on `messages` (appended in place with every assistant/tool turn) and return the final text."""
     declared = openai_tools(tools)
+
     for _ in range(max_rounds):
-        result = await llm.chat(model, messages, declared, on_delta)
+        result = await _chat_round(model, messages, declared, emit, on_delta)
         messages.append(llm.assistant_message(result))
         if not result["tool_calls"]:
             return result["text"]

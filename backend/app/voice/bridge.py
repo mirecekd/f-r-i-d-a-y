@@ -18,6 +18,7 @@ from app.approval import Approvals
 from app.memory.briefing import briefing_or_empty
 from app.voice import session as live
 from app.voice.frames import FrameForwarder
+from app.voice.progress import ProgressSpeaker
 from app.voice.relay import Relay, SendBytes, SendJson
 from app.voice.tools import ToolRegistry, ToolRunner
 
@@ -46,7 +47,8 @@ class VoiceBridge:
         self._send_json = send_json
         self._registry = registry
         self._session: Any = None
-        self._runner = ToolRunner(registry, None, send_json, approvals)
+        progress = ProgressSpeaker(self._say_progress, lambda: self._session is not None, lambda: self._relay.someone_speaking)
+        self._runner = ToolRunner(registry, None, send_json, approvals, progress)
         self._relay = Relay(send_json, send_bytes, lambda: bool(self._runner.long_running))
         self.audio_profile = "headphones"  # set by the browser's `audio_profile`, read when a session starts
         self._profile = self.audio_profile  # profile of the running session
@@ -118,6 +120,9 @@ class VoiceBridge:
             log.warning("text dropped: %s", e)
             return
         await self._relay.set_state("thinking")
+
+    async def _say_progress(self, line: str) -> None:
+        await self.send_text(f"[progress note from the system, not from the user] {line}. Say one very short sentence about it.")
 
     async def send_context(self, text: str) -> None:
         """Add a text turn to the Live conversation without asking for a reply (like the image source tag)."""
