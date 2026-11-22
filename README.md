@@ -92,7 +92,8 @@ All settings are environment variables, see [.env.example](.env.example).
 |---|---|---|
 | `GEMINI_API_KEY` | - | Required. Google AI Studio key |
 | `GEMINI_LIVE_MODEL` | `gemini-3.8-live` | Live model for voice |
-| `GEMINI_VOICE`, `GEMINI_LANGUAGE` | `Algieba`, `cs-CZ` | Voice and spoken language |
+| `GEMINI_VOICE`, `GEMINI_LANGUAGE` | `Kore`, `cs-CZ` | Voice and spoken language |
+| `FRIDAY_SHOW_MALE_VOICES` | `0` | List the male voices in the voice picker too; by default only the 14 female voices are offered |
 | `FRIDAY_SEARCH_MODEL` | `gemini-flash-latest` | Model for web search |
 | `FRIDAY_AGENT_MODEL`, `FRIDAY_CHAT_MODEL` | newest `gemini-3*-flash` (agent) | Default models of the agent/chat roles |
 | `FRIDAY_SPOKEN_PROGRESS` | `1` | Spoken one-line progress while long tools run; `0` turns it off |
@@ -105,7 +106,7 @@ All settings are environment variables, see [.env.example](.env.example).
 | `FRIDAY_DATA_DIR` | `/srv/data` | Uploads, models, preferences, optional `mcp_servers.json` |
 | `STATIC_DIR` | `<backend>/static` | Built frontend |
 | `FRIDAY_DEMO` | `0` | `1` enables demo scenes (development) |
-| `FRIDAY_VERSION` | `__version__` | Version override, set by the Docker build |
+| `FRIDAY_VERSION` | empty (`__version__`) | Version override; the release pipeline sets it to its tag, a local build leaves it empty |
 
 ## 🔒 Security
 

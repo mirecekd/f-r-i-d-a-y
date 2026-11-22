@@ -14,7 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
 COPY backend/mcp_servers.json ./mcp_servers.json
 COPY --from=web /backend/static ./static
-ARG FRIDAY_VERSION=dev
+# Empty by default: the app then reports backend/app/__init__.py __version__ (the release pipeline passes its tag)
+ARG FRIDAY_VERSION=
 ENV FRIDAY_VERSION=$FRIDAY_VERSION STATIC_DIR=/srv/static
 EXPOSE 8670
 HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request as u;u.urlopen('http://127.0.0.1:8670/health')"

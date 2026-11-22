@@ -26,6 +26,7 @@ def data_dir(tmp_path, monkeypatch):
     monkeypatch.setenv("FRIDAY_DATA_DIR", str(tmp_path))
     monkeypatch.delenv("GEMINI_LANGUAGE", raising=False)
     monkeypatch.delenv("GEMINI_VOICE", raising=False)
+    monkeypatch.delenv("FRIDAY_SHOW_MALE_VOICES", raising=False)
     monkeypatch.delenv("GEMINI_LIVE_MODEL", raising=False)
     return tmp_path
 
@@ -55,10 +56,34 @@ def test_voice_persisted_per_model_and_keeps_other_keys(data_dir):
 def test_voice_falls_back_to_default_when_pin_invalid(monkeypatch):
     prefs.save_voice("m1", "Nope")
     assert voices.current_voice("m1") == voices.DEFAULT_VOICE == "Kore"
+    monkeypatch.setenv("FRIDAY_SHOW_MALE_VOICES", "1")
     monkeypatch.setitem(voices.MODEL_VOICES, "m1", ["Puck", "Charon"])
     prefs.save_voice("m1", "Kore")  # valid in general but not for this model
     assert voices.current_voice("m1") == "Puck"
     assert [v["id"] for v in voices.voices_for("m1")] == ["Puck", "Charon"]
+
+
+def test_male_voices_are_hidden_by_default_and_shown_by_the_switch(monkeypatch):
+    monkeypatch.delenv("FRIDAY_SHOW_MALE_VOICES", raising=False)
+    shown = voices.voices_for("m1")
+    assert shown and all(v["gender"] == "female" for v in shown) and len(shown) == 14
+    assert not voices.is_valid("m1", "Puck") and voices.is_valid("m1", "Kore")
+    for off in ("0", "false", "no", "", "maybe"):
+        monkeypatch.setenv("FRIDAY_SHOW_MALE_VOICES", off)
+        assert all(v["gender"] == "female" for v in voices.voices_for("m1")), off
+    for on in ("1", "true", "YES", " On "):
+        monkeypatch.setenv("FRIDAY_SHOW_MALE_VOICES", on)
+        assert len(voices.voices_for("m1")) == 30 and voices.is_valid("m1", "Puck"), on
+
+
+def test_a_pinned_male_voice_falls_back_to_the_default_while_hidden(monkeypatch):
+    monkeypatch.setenv("FRIDAY_SHOW_MALE_VOICES", "1")
+    prefs.save_voice("m1", "Puck")
+    assert voices.current_voice("m1") == "Puck"
+    monkeypatch.delenv("FRIDAY_SHOW_MALE_VOICES")
+    assert voices.current_voice("m1") == "Kore"  # the pin stays on disk, it just is not used
+    monkeypatch.setenv("GEMINI_VOICE", "Charon")
+    assert voices.current_voice("m1") == "Kore"  # a male GEMINI_VOICE is ignored while male voices are hidden
 
 
 def test_voices_table_is_complete_and_well_formed():
@@ -120,7 +145,8 @@ def test_models_message_shape_and_set_language_and_voice(client):
         first = next_models(ws)
         assert first["language"] == "cs-CZ" and first["voice"] == "Kore"
         assert {"code": "cs-CZ", "label": "Čeština"} in first["languages"]
-        assert len(first["voices"]) == 30 and set(first["voices"][0]) == {"id", "label", "gender", "style"}
+        assert len(first["voices"]) == 14 and set(first["voices"][0]) == {"id", "label", "gender", "style"}
+        assert {v["gender"] for v in first["voices"]} == {"female"}  # male voices are hidden by default
         ws.send_json({"t": "set_language", "language": "sk-SK"})
         assert next_models(ws)["language"] == "sk-SK"
         ws.send_json({"t": "set_model", "role": "chat", "model": "g1-live"})

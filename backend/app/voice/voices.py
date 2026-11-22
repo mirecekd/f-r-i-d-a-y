@@ -33,9 +33,15 @@ VOICES: list[dict[str, str]] = [{"id": v, "label": v, "gender": g, "style": s} f
 MODEL_VOICES: dict[str, list[str]] = {}
 
 
+def show_male() -> bool:
+    """Male voices are hidden unless FRIDAY_SHOW_MALE_VOICES is set to 1/true/yes/on (read per call, so tests can flip it)."""
+    return os.getenv("FRIDAY_SHOW_MALE_VOICES", "").strip().lower() in ("1", "true", "yes", "on")
+
+
 def voices_for(model: str) -> list[dict[str, str]]:
     allowed = MODEL_VOICES.get(model)
-    return [v for v in VOICES if allowed is None or v["id"] in allowed]
+    male_ok = show_male()
+    return [v for v in VOICES if (allowed is None or v["id"] in allowed) and (male_ok or v["gender"] != "male")]
 
 
 def is_valid(model: str, voice: str) -> bool:

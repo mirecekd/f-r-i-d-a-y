@@ -3,7 +3,7 @@ services:
     build:
       context: .
       args:
-        FRIDAY_VERSION: ${FRIDAY_VERSION:-dev}
+        FRIDAY_VERSION: ${FRIDAY_VERSION:-}
     image: ghcr.io/mirecekd/f-r-i-d-a-y:latest
     container_name: friday
     restart: unless-stopped

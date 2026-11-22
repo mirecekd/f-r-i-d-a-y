@@ -2,7 +2,16 @@
 
 Versions are `YYYYMMDD.X` (build day and the counter of that day).
 
-## [20261121.5] - 2026-11-21
+## [20261122.2] - 2026-11-22
+
+### New
+- Voice picker lists only female voices. `FRIDAY_SHOW_MALE_VOICES=1` (env / `.env`, for example in Docker) shows the male voices too; a pinned or `GEMINI_VOICE` male voice falls back to the default (`Kore`) while they are hidden.
+
+### Changed
+- The version is now the same everywhere: the image, `/health` and the changelog carry the number the release pipeline tags (a local build passes it with `FRIDAY_VERSION`).
+- README: the default voice is `Kore` (it said `Algieba`).
+
+## [20261122.1] - 2026-11-22
 
 ### New
 - 3D asset catalog (`backend/app/assets`): a curated index of 271 CC0 models (furniture, plants, trees, animals, people, vehicles, buildings,

@@ -241,7 +241,7 @@ at every Live session start: `speech_config.language_code`, the voice, the syste
 otherwise a first line "Answer in X unless the user switches language") and `input_audio_transcription.language_codes`.
 Text chat uses the same language. Changing the chat model re-sends `models` with that model's voices; a pinned voice
 that the new model does not offer falls back to the default voice (Kore, a female voice, documented as "firm";
-`GEMINI_VOICE` overrides the default). When a voice session is active a language, voice or chat-model change is answered
+`GEMINI_VOICE` overrides the default). Male voices are left out of `voices` and refused by `set_voice` unless `FRIDAY_SHOW_MALE_VOICES` is `1`; a pinned or env voice that is hidden falls back to the default. When a voice session is active a language, voice or chat-model change is answered
 with a `notice` ("applies to the next voice session"); the session is not restarted.
 
 Probed against the real API (Live turn with audio out, all 30 prebuilt voices): every voice connects on
