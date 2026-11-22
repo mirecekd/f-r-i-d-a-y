@@ -11,8 +11,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import __version__
-from app.assets import router as assets_router
 from app.agent_wiring import AgentSession
+from app.assets import router as assets_router
 from app.conversation import new_conversation
 from app.entities.messages import KINDS as ENTITY_MESSAGES
 from app.entities.messages import handle_entity_message

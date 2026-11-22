@@ -75,10 +75,11 @@ def test_bad_base64_and_oversize_give_errors(client):
 
 
 def test_http_upload_and_download_is_an_attachment(client):
-    body = client.post("/api/upload", files={"file": ("../evil name.docx", docx_bytes(), "text/html")}).json()
+    data = docx_bytes()  # built once: a second build can differ in the zip timestamp
+    body = client.post("/api/upload", files={"file": ("../evil name.docx", data, "text/html")}).json()
     assert body["kind"] == "docx" and body["name"] == "..evil name.docx"
     got = client.get(body["url"])
-    assert got.content == docx_bytes() and got.headers["content-disposition"].startswith("attachment")
+    assert got.content == data and got.headers["content-disposition"].startswith("attachment")
     assert got.headers["x-content-type-options"] == "nosniff" and got.headers["content-type"] == "application/octet-stream"
     assert client.get("/api/files/../../etc/passwd").status_code in (404, 422)
     assert client.get("/api/files/" + "0" * 32).status_code == 404
